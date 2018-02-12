@@ -18,6 +18,8 @@
         -   [onTabErrorHandler](#ontaberrorhandler)
 -   [Content Scripts](#content-scripts)
     -   [crawler](#crawler)
+-   [centeredWindow](#centeredwindow)
+-   [configureGenerator](#configuregenerator)
 -   [onHeadersReceivedHandler](#onheadersreceivedhandler)
 -   [addListeners](#addlisteners)
 -   [removeListeners](#removelisteners)
@@ -63,7 +65,8 @@ When some launch event occurs, this function will
 
 **Parameters**
 
--   `tab`  
+-   `config`  
+-   `sender`  
 
 ### sitemapGenerator
 
@@ -150,6 +153,33 @@ the tab once the crawling has completed
 ### crawler
 
 this module gets loaded in a tab and it looks for links on the page
+
+## centeredWindow
+
+Opens centered window in the middle of user's monitor viewport.
+
+If user has multiple monitors this method launches window in the first/leftmost monitor.
+
+This method requires `system.display` permission in `manifest.json`
+
+**Parameters**
+
+-   `width` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** width of the new window (px)
+-   `height` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** height of the new window (px)
+-   `url` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** url to open
+-   `type` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** "normal" or "popup"; defaults to "popup"
+-   `focused`  
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+
+## configureGenerator
+
+launch the setup page where user can configure their
+session options
+
+**Parameters**
+
+-   `tab`  
 
 ## onHeadersReceivedHandler
 

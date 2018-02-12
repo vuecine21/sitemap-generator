@@ -54,7 +54,11 @@ var sitemapGenerator = function (config) {
         listAdd(config.url, lists.processQueue);
 
         // 3. Create rendering window then navigate to launch url
-        openRenderingWindow().then(navigateToNext);
+        return centeredWindow(800, 700, launchPage, "normal")
+            .then(function (window) {
+                targetRenderer = window.id;
+                navigateToNext();
+            });
 
     }
 
@@ -374,43 +378,6 @@ var sitemapGenerator = function (config) {
             }, function () {
                 if (chrome.runtime.lastError)
                     terminate("Terminating because rendering window was closed");
-            });
-        });
-    }
-
-    function openRenderingWindow() {
-        return new Promise(function (resolve, reject) {
-
-            /** @ignore **/
-            function center(max, size) {
-                return parseInt(Math.max(0, Math.round(0.5 * (max - size))));
-            }
-
-            /** @ignore **/
-            function getBounds() {
-                return new Promise(function (resolve) {
-                    chrome.system.display.getInfo(function (info) {
-                        resolve(info && info[0] ?
-                            info[0].workArea : {width: 0, height: 0});
-                    });
-                });
-            }
-
-            /** @ignore **/
-            getBounds().then(function (area) {
-                // Create render target
-                chrome.windows.create({
-                    url: launchPage,
-                    focused: false,
-                    type: "normal",
-                    left: center(area.width, 800),
-                    top: center(area.height, 700),
-                    width: 800,
-                    height: 700
-                }, function (window) {
-                    targetRenderer = window.id;
-                    resolve();
-                });
             });
         });
     }

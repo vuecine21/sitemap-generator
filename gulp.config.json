@@ -18,6 +18,7 @@
     "en_GB"
   ],
   "background": [
+    "./src/background/_*.js",
     "./src/background/generator.js",
     "./src/background/*.js"
   ],

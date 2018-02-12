@@ -2,12 +2,13 @@
  *  @namespace  backgroundEvents
  *  @description Listens to relevant events in the browser and responds accordingly
  */
-(function RegisterEventListeners(sitemapGenerator) {
+(function RegisterEventListeners(sitemapGenerator, centeredWindow) {
 
     var generator = null;
     var introUrl = "https://sneeakco.github.io/spa-sitemap/intro";
+    var setupPage = chrome.extension.getURL("setup.html");
 
-    chrome.browserAction.onClicked.addListener(launchGenerator);
+    chrome.browserAction.onClicked.addListener(configureGenerator);
     chrome.runtime.onInstalled.addListener(onInstalledEvent);
     chrome.runtime.onMessage.addListener(onMessageHandler);
 
@@ -27,6 +28,9 @@
         if (request.status) {
             return sendResponse((generator) ? generator.status() : {});
         }
+        if (request.start) {
+            return launchGenerator(request.start, sender);
+        }
     }
 
     /**
@@ -42,19 +46,14 @@
     }
 
     /**
-     * @memberof backgroundEvents
-     * @description When some launch event occurs, this function will
-     * - determine the url to crawl (i.e. optional parameter or active tab)
-     * - make sure the extension has permission to access that domain
-     * - kick off a crawling sessions
+     * @memberOf backgroundEvents
+     * @description launch the setup page where user can configure their
+     * session options
      */
-    function launchGenerator(tab) {
-
+    function configureGenerator(tab) {
         if (generator) return;
 
         var appPath = tab.url;
-
-        // if this is a page url we need to pop last element from url
         if (tab.url.indexOf("/") > 0) {
             var parts = tab.url.split("/");
             var last = parts[parts.length - 1];
@@ -62,29 +61,45 @@
                 parts.pop();
             appPath = parts.join("/");
         }
+        return centeredWindow(600, 600, setupPage + "?u=" + appPath, "popup");
+    }
 
-        chrome.permissions.request({
-            permissions: ['tabs'],
-            origins: [(appPath + "/*")]
-        }, function (granted) {
-            if (granted) {
-                generator = new sitemapGenerator({
-                    url: appPath,
-                    requestDomain: (appPath + "/*"),
-                    contenttype_patterns: ["text/html", "text/plain"],
-                    exclude_extension: [".png", ".json", ".jpg", ".jpeg", ".js", ".css",
-                        ".zip", ".mp3", ".mp4", ".ogg", ".avi", ".wav", ".webm", ".gif", ".ico"],
-                    success_codes: [200, 201, 202, 203, 304],
-                    maxTabCount: 25,
-                    callback: function () {
-                        generator = null;
-                    }
-                });
-                generator.start();
-            } else {
-                alert("You did not authorize access to domain: " + tab.url);
-            }
+    /**
+     * @memberof backgroundEvents
+     * @description When some launch event occurs, this function will
+     * - determine the url to crawl (i.e. optional parameter or active tab)
+     * - make sure the extension has permission to access that domain
+     * - kick off a crawling sessions
+     */
+    function launchGenerator(config, sender) {
+        if (generator) return;
+
+        function startSession() {
+            config.callback = function () {
+                generator = null;
+            };
+            generator = new sitemapGenerator(config);
+            generator.start();
+        }
+
+        // close the configuration tab
+        chrome.tabs.remove(sender.tab.id, function () {
+
+            // request access to target domain then start session if permission granted
+            // else notify user
+            chrome.permissions.request({
+                    permissions: ['tabs'],
+                    origins: [config.requestDomain]
+                },
+                function (granted) {
+                    if (!granted)
+                        return alert("You did not authorize access to domain: " + config.url);
+                    return sender.tab ?
+                        chrome.tabs.remove(sender.tab.id, startSession) :
+                        startSession();
+                }
+            );
         });
     }
 
-}(sitemapGenerator));
+}(sitemapGenerator, centeredWindow));
