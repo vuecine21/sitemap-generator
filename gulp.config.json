@@ -1,0 +1,30 @@
+{
+  "dist": "./dist",
+  "source": "./src",
+  "publish": "./releases",
+  "manifest": "./manifest.json",
+  "package": "./package.json",
+  "js": "./src/**/*.js",
+  "html": "./src/**/*.html",
+  "scss": "./src/**/*.scss",
+  "icons": [
+    "./assets/img/icons/**/*.png",
+    "./assets/img/icons/**/*.svg"
+  ],
+  "locales": "./assets/locales/",
+  "locales_list": [
+    "en",
+    "en_US",
+    "en_GB"
+  ],
+  "background": [
+    "./src/background/generator.js",
+    "./src/background/*.js"
+  ],
+  "content": [
+    "./src/crawler/*.js"
+  ],
+  "modules": [
+    "./src/ui/**/*.js"
+  ]
+}

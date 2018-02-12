@@ -1,0 +1,19 @@
+toc:
+- name: Background
+  description: |
+    The main logic of this extension happens in the background pages of the extension.
+  children:
+    - backgroundEvents
+    - sitemapGenerator
+- name: Content Scripts
+  description: |
+    While sitemap generation is ongoing this extension will load content scripts
+    in the tabs that are being crawled. The purpose of these scripts is to wait for
+    the page to load then look for anchor tags on the page and send them to the background page.
+
+    The background page controls all of hte following aspects: 1) opening tabs,
+    2) initiating the client side crawling by loading the content script and 3) closing
+    the tab once the crawling has completed
+
+  children:
+    - crawler

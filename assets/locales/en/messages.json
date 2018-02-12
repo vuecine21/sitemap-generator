@@ -1,0 +1,11 @@
+{
+  "appName": {
+    "message": "Sitemap Generator"
+  },
+  "appShortName": {
+    "message": "Sitemap Generator"
+  },
+  "appDesc": {
+    "message": "Generates sitemaps using client-side rendering. Compatible with single-page apps made with angular, react, etc."
+  }
+}

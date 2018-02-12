@@ -1,0 +1,53 @@
+{
+  "name": "sitemap-generator",
+  "version": "0.0.1",
+  "description": "use chrome browser to generate sitemaps for your websites. This extension crawls website like end user and checks and paths actually work.",
+  "keywords": [
+    "keywords"
+  ],
+  "scripts": {
+    "build": "gulp build --prod && npm run test",
+    "dev": "gulp",
+    "test": "mocha --require babel-core/register --colors ./test/*.spec.js",
+    "test:watch": "mocha --require babel-core/register --colors -w ./test/*.spec.js"
+  },
+  "author": "Professor Chaos",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sneeakco/____.git"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.3",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-env": "^1.6.1",
+    "chai": "^4.1.2",
+    "del": "^2.2.2",
+    "eslint": "^4.13.1",
+    "eslint-loader": "^1.9.0",
+    "fs": "0.0.1-security",
+    "gulp": "latest",
+    "gulp-bump": "^2.5.0",
+    "gulp-clean-css": "^3.0.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-htmlmin": "^2.0.0",
+    "gulp-if": "^2.0.1",
+    "gulp-jshint": "^2.0.1",
+    "gulp-json-modify": "^1.0.2",
+    "gulp-load-plugins": "^1.2.4",
+    "gulp-merge-json": "^1.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "latest",
+    "gulp-strip-comments": "^2.4.3",
+    "gulp-strip-debug": "^1.1.0",
+    "gulp-uglify": "^2.0.0",
+    "gulp-zip": "^3.2.0",
+    "jshint": "^2.9.2",
+    "jshint-stylish": "^2.2.1",
+    "mocha": "^4.0.1",
+    "semver": "^5.3.0"
+  }
+}
