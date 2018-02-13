@@ -2,6 +2,7 @@
   "dist": "./dist",
   "source": "./src",
   "publish": "./releases",
+  "readme": "readme.md",
   "manifest": "./manifest.json",
   "package": "./package.json",
   "js": "./src/**/*.js",

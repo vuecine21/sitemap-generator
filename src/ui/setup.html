@@ -16,7 +16,7 @@
             color: #444;
         }
 
-        .content{
+        .content {
             width: 100%;
             display: table;
             max-width: 1024px;
@@ -59,9 +59,15 @@
             display: table;
         }
 
-        label{
+        label {
             font-weight: bold;
-            font-size:80%;
+            font-size: 80%;
+        }
+        .invalid-feedback{
+            font-size:60%;
+        }
+        code{
+            color: rgb(49, 109, 240);
         }
 
     </style>
@@ -73,9 +79,10 @@
 
 <div class="content">
     <div>
-        <label for="basic-url">Website URL</label>
-        <small>Enter root domain or application path for which to generate sitemap</small>
+        <label for="basic-url">Enter Website URL you want to crawl</label>
+        <small>Provide full absolute url starting with <code>http</code> or <code> https</code>.</small>
         <input type="text" class="form-control form-control-lg" name="url">
+        <div id="url-error" class="invalid-feedback"></div>
     </div>
 </div>
 

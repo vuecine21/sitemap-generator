@@ -5,6 +5,7 @@ toc:
   children:
     - backgroundEvents
     - sitemapGenerator
+    - centeredWindow
 - name: Content Scripts
   description: |
     While sitemap generation is ongoing this extension will load content scripts
@@ -17,3 +18,15 @@ toc:
 
   children:
     - crawler
+
+- name: User Interface (UI)
+  description: |
+    The UI pages are extension pages allowing user to control the sitemap generation process.
+    
+    There are currectly to views: 
+    - `Setup` page, where user can configure their preferences
+    - `Processing` window, which shows while sitemap generation is in progress
+
+  children:
+    - setup
+    - processing

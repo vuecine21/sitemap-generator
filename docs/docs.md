@@ -6,26 +6,36 @@
     -   [backgroundEvents](#backgroundevents)
         -   [onMessageHandler](#onmessagehandler)
         -   [onInstalledEvent](#oninstalledevent)
+        -   [configureGenerator](#configuregenerator)
         -   [launchGenerator](#launchgenerator)
     -   [sitemapGenerator](#sitemapgenerator)
         -   [start](#start)
         -   [terminate](#terminate)
         -   [status](#status)
         -   [noindex](#noindex)
+        -   [makeSitemap](#makesitemap)
         -   [onComplete](#oncomplete)
         -   [receiveUrlFromContent](#receiveurlfromcontent)
+        -   [onHeadersReceivedHandler](#onheadersreceivedhandler)
         -   [onTabLoadListener](#ontabloadlistener)
         -   [onTabErrorHandler](#ontaberrorhandler)
+        -   [addListeners](#addlisteners)
+        -   [removeListeners](#removelisteners)
+        -   [listAdd](#listadd)
+        -   [navigateToNext](#navigatetonext)
+    -   [centeredWindow](#centeredwindow)
 -   [Content Scripts](#content-scripts)
     -   [crawler](#crawler)
--   [centeredWindow](#centeredwindow)
--   [configureGenerator](#configuregenerator)
--   [onHeadersReceivedHandler](#onheadersreceivedhandler)
--   [addListeners](#addlisteners)
--   [removeListeners](#removelisteners)
--   [listAdd](#listadd)
--   [navigateToNext](#navigatetonext)
--   [appendCodeFragment](#appendcodefragment)
+        -   [appendCodeFragment](#appendcodefragment)
+        -   [getRobotsMeta](#getrobotsmeta)
+        -   [findLinks](#findlinks)
+-   [User Interface (UI)](#user-interface-ui)
+    -   [setup](#setup)
+        -   [getParameterByName](#getparameterbyname)
+        -   [onStartButtonClick](#onstartbuttonclick)
+    -   [processing](#processing)
+        -   [checkStatus](#checkstatus)
+        -   [onCloseButtonClick](#onclosebuttonclick)
 
 ## Background
 
@@ -54,6 +64,15 @@ It should launch a demo or some other way to explain how the extension works.
 **Parameters**
 
 -   `details` **any** chrome provided parameter; indicates if this is new install or update
+
+#### configureGenerator
+
+launch the setup page where user can configure their
+session options
+
+**Parameters**
+
+-   `tab`  
 
 #### launchGenerator
 
@@ -89,6 +108,9 @@ The process works as follows:
 
 -   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** configuration options
     -   `config.url` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the website/app path we want to crawl -- all sitemap entries will be such that they include this base url
+    -   `config.contenttype_patterns` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>** http response content types we want to include in the sitemap
+    -   `config.success_codes` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** http response status codes which should be regarded as successful
+    -   `config.maxTabCount` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** max number of tabs allowed to be open any given time
 
 #### start
 
@@ -110,6 +132,10 @@ when crawling a page the page is set specifically to not be index we must remove
 
 -   `url`  
 
+#### makeSitemap
+
+this function creates the sitemap and downloads it, then opens or activates downloads tab
+
 #### onComplete
 
 execute everytime when processing is done, independed of why processing ended
@@ -122,6 +148,16 @@ listen to messages sent from content script back to the generator instance
 
 -   `request`  
 -   `sender`  
+
+#### onHeadersReceivedHandler
+
+listen to headers to determine type and cancel and
+close tab immediately if the detected content type is not on the
+list of target types
+
+**Parameters**
+
+-   `details`  
 
 #### onTabLoadListener
 
@@ -139,22 +175,29 @@ if tab errors, cloe it and load next one
 
 -   `details`  
 
-## Content Scripts
+#### addListeners
 
-While sitemap generation is ongoing this extension will load content scripts
-in the tabs that are being crawled. The purpose of these scripts is to wait for
-the page to load then look for anchor tags on the page and send them to the background page.
+add listeners to track response headers and to receive messages
+from the opened tabs
 
-The background page controls all of hte following aspects: 1) opening tabs,
-2) initiating the client side crawling by loading the content script and 3) closing
-the tab once the crawling has completed
+#### removeListeners
 
+when processing is done remove all event listeners
 
-### crawler
+#### listAdd
 
-this module gets loaded in a tab and it looks for links on the page
+move url to a specific processing queue
 
-## centeredWindow
+**Parameters**
+
+-   `url`  
+-   `list`  
+
+#### navigateToNext
+
+take first queued url and create new tab for that url
+
+### centeredWindow
 
 Opens centered window in the middle of user's monitor viewport.
 
@@ -172,51 +215,83 @@ This method requires `system.display` permission in `manifest.json`
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
-## configureGenerator
+## Content Scripts
 
-launch the setup page where user can configure their
-session options
+While sitemap generation is ongoing this extension will load content scripts
+in the tabs that are being crawled. The purpose of these scripts is to wait for
+the page to load then look for anchor tags on the page and send them to the background page.
 
-**Parameters**
+The background page controls all of hte following aspects: 1) opening tabs,
+2) initiating the client side crawling by loading the content script and 3) closing
+the tab once the crawling has completed
 
--   `tab`  
 
-## onHeadersReceivedHandler
+### crawler
 
-listen to headers to determine type and cancel and
-close tab immediately if the detected content type is not on the
-list of target types
+this module gets loaded in a tab and it looks for links on the page
 
-**Parameters**
+#### appendCodeFragment
 
--   `details`  
-
-## addListeners
-
-add listeners to track response headers and to receive messages
-from the opened tabs
-
-## removeListeners
-
-when processing is done remove all event listeners
-
-## listAdd
-
-move url to a specific processing queue
-
-**Parameters**
-
--   `url`  
--   `list`  
-
-## navigateToNext
-
-take first queued url and create new tab for that url
-
-## appendCodeFragment
-
-Append fragment of js code into document head
+Append some fragment of js code into document head
 
 **Parameters**
 
 -   `jsCodeFragment` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the code you want to execute in the document context
+
+#### getRobotsMeta
+
+look for "robots" meta tag in the page header and if found return its contents
+
+#### findLinks
+
+this function looks for links on the page then sends a message to background bage with the result
+
+## User Interface (UI)
+
+The UI pages are extension pages allowing user to control the sitemap generation process.
+
+There are currectly to views: 
+
+-   `Setup` page, where user can configure their preferences
+-   `Processing` window, which shows while sitemap generation is in progress
+
+
+### setup
+
+this module is used to configure runtime params for sitemap generation
+
+#### getParameterByName
+
+Get some value from querystring
+
+**Parameters**
+
+-   `name` **any** key
+-   `url` **any** url to parse (defaults to current)
+
+#### onStartButtonClick
+
+Handle start button click -> this will check user inputs 
+and if successful, send message to background page to initiate crawling.
+
+**Parameters**
+
+-   `e` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
+### processing
+
+this module is used to configure runtime params for sitemap generation
+
+#### checkStatus
+
+Request information about current processing status from the background
+then update the ui to reflect current status.
+
+#### onCloseButtonClick
+
+When user clicks button to terminate send message to background page
+to terminate all processing. Closing the rendering window will ultimately have the same effect.
+
+**Parameters**
+
+-   `e`  

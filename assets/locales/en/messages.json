@@ -6,6 +6,6 @@
     "message": "Sitemap Generator"
   },
   "appDesc": {
-    "message": "Generates sitemaps using client-side rendering. Compatible with single-page apps made with angular, react, etc."
+    "message": "Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for dynamic single page (spa) applications."
   }
 }

@@ -46,7 +46,7 @@
     }
 
     /**
-     * @memberOf backgroundEvents
+     * @memberof backgroundEvents
      * @description launch the setup page where user can configure their
      * session options
      */

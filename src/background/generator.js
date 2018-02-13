@@ -17,6 +17,9 @@
  * @namespace
  * @param {Object} config - configuration options
  * @param {string} config.url - the website/app path we want to crawl -- all sitemap entries will be such that they include this base url
+ * @param {Array<string>} config.contenttype_patterns - http response content types we want to include in the sitemap
+ * @param {Array<number>} config.success_codes - http response status codes which should be regarded as successful
+ * @param {number} config.maxTabCount - max number of tabs allowed to be open any given time
  */
 var sitemapGenerator = function (config) {
 
@@ -98,6 +101,10 @@ var sitemapGenerator = function (config) {
 
     //////////////////////////
 
+    /**
+     * @memberof sitemapGenerator
+     * @description this function creates the sitemap and downloads it, then opens or activates downloads tab
+     */
     function makeSitemap() {
 
         var windowCloseError = chrome.runtime.lastError; // ignore
@@ -113,19 +120,18 @@ var sitemapGenerator = function (config) {
             element.click();
 
             var downloads_page = "chrome://downloads";
-            chrome.tabs.query({url: downloads_page + "/*"}, function (result) {
+            chrome.tabs.query({ url: downloads_page + "/*" }, function (result) {
                 if (result && result.length)
                     chrome.tabs.reload(result[0].id, null, function () {
-                        chrome.tabs.update(result[0].id, {active: true});
+                        chrome.tabs.update(result[0].id, { active: true });
                     });
-                else chrome.tabs.create({url: downloads_page, active: true});
+                else chrome.tabs.create({ url: downloads_page, active: true });
             });
 
         }
 
         // for (var list in lists)
         //     console.log(list + "\r\n" + lists[list].join("\r\n"));
-
 
         var now = new Date();
         var lastmod = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
@@ -155,7 +161,7 @@ var sitemapGenerator = function (config) {
         clearInterval(progressInterval);
 
         (function closeRenderer() {
-            chrome.tabs.query({windowId: targetRenderer, url: config.requestDomain}, function (result) {
+            chrome.tabs.query({ windowId: targetRenderer, url: config.requestDomain }, function (result) {
                 if (result.length > 0) {
                     for (var i = 0; i < result.length; i++)
                         chrome.tabs.remove(result[i].id);
@@ -249,8 +255,8 @@ var sitemapGenerator = function (config) {
         }
     }
 
-    /**
-     * @memberOf sitemapGenerator
+    /** 
+     * @memberof sitemapGenerator 
      * @description listen to headers to determine type and cancel and
      * close tab immediately if the detected content type is not on the
      * list of target types
@@ -271,7 +277,7 @@ var sitemapGenerator = function (config) {
         }
         if (!valid_type || terminating) {
             chrome.tabs.remove(tabId);
-            return {cancel: true};
+            return { cancel: true };
         }
     }
 
@@ -318,36 +324,36 @@ var sitemapGenerator = function (config) {
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @memberof sitemapGenerator 
      * @description add listeners to track response headers and to receive messages
      * from the opened tabs
      */
     function addListeners() {
         chrome.webRequest.onHeadersReceived.addListener(onHeadersReceivedHandler,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
         chrome.webRequest.onCompleted.addListener(onTabLoadListener,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.addListener(onTabErrorHandler,
-            {urls: [config.requestDomain], types: ['main_frame']});
+            { urls: [config.requestDomain], types: ['main_frame'] });
         chrome.runtime.onMessage.addListener(receiveUrlFromContent);
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @memberof sitemapGenerator 
      * @description when processing is done remove all event listeners
      */
     function removeListeners() {
         chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceivedHandler,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
         chrome.webRequest.onCompleted.removeListener(onTabLoadListener,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.removeListener(onTabErrorHandler,
-            {urls: [config.requestDomain], types: ['main_frame']});
+            { urls: [config.requestDomain], types: ['main_frame'] });
         chrome.runtime.onMessage.removeListener(receiveUrlFromContent);
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @memberof sitemapGenerator 
      * @description move url to a specific processing queue
      */
     function listAdd(url, list) {
@@ -355,7 +361,7 @@ var sitemapGenerator = function (config) {
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @memberof sitemapGenerator 
      * @description take first queued url and create new tab for that url
      */
     function navigateToNext() {
@@ -365,7 +371,7 @@ var sitemapGenerator = function (config) {
         var nextUrl = lists.processQueue.shift();
         listAdd(nextUrl, lists.completedUrls);
 
-        chrome.tabs.query({windowId: targetRenderer}, function (result) {
+        chrome.tabs.query({ windowId: targetRenderer }, function (result) {
 
             // if max tabs already open put the url back in the queue and exit
             if (result.length > maxTabCount)
