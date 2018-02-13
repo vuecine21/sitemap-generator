@@ -5,7 +5,7 @@
 (function RegisterEventListeners(sitemapGenerator, centeredWindow) {
 
     var generator = null;
-    var introUrl = "https://sneeakco.github.io/spa-sitemap/intro";
+    var introUrl = "https://sneeakco.github.io/sitemap-generator/intro";
     var setupPage = chrome.extension.getURL("setup.html");
 
     chrome.browserAction.onClicked.addListener(configureGenerator);
