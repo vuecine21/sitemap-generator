@@ -21,7 +21,6 @@ permalink: /intro
 
 When you use use the extension to crawl some domain for the first time you should see the above prompt. The permissions are required for the sitemap generation to be successful, so make sure you choose `Allow`.
 
-
 What the prompt says: **Read and change your data on (some website)** 
  
 Why it is needed: This permission is needed to read contents of the website you are about to crawl. 

@@ -2,9 +2,7 @@
  * @description this module is used to configure runtime params for sitemap generation
  * @namespace
  */
-
 (function setup() {
-
 
     var siteUrlInput = document.getElementsByName("url")[0];
     var siteUrlInputError = document.getElementById("url-error");
