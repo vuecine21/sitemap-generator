@@ -137,7 +137,7 @@ var sitemapGenerator = function (config) {
         var lastmod = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
 
         var sitemap = lists.successUrls.sort().map(function (u) {
-            return "<url><loc>" + encodeURI(u) + "</loc><lastmod>" + lastmod + "</lastmod></url>";
+            return "<url><loc>" + encodeURI(u) + "</loc></url>";
         });
 
         sitemap = [
