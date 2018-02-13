@@ -1,6 +1,6 @@
 {
   "name": "sitemap-generator",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "use chrome browser to generate sitemaps for your websites. This extension crawls website like end user and checks and paths actually work.",
   "keywords": [
     "keywords"

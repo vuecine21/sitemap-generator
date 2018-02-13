@@ -1,7 +1,9 @@
 {
   "dist": "./dist",
   "source": "./src",
+  "releases": "./releases",
   "publish": "./releases",
+  "readme": "readme.md",
   "manifest": "./manifest.json",
   "package": "./package.json",
   "js": "./src/**/*.js",

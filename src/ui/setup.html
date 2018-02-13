@@ -63,6 +63,12 @@
             font-weight: bold;
             font-size: 80%;
         }
+        .invalid-feedback{
+            font-size:60%;
+        }
+        code{
+            color: rgb(49, 109, 240);
+        }
 
     </style>
 </head>
@@ -73,12 +79,10 @@
 
 <div class="content">
     <div>
-        <label for="basic-url">Website URL you want to crawl</label>
-        <small>Enter domain such as <code>http://www.example.com</code> or a more specific application path, such as
-            <code>http://www.example.com/myAwesomeApp</code>.
-            <br/><br/>Make sure to enter full absolute url starting with <code>http</code> or <code> https</code>.
-        </small>
+        <label for="basic-url">Enter Website URL you want to crawl</label>
+        <small>Provide full absolute url starting with <code>http</code> or <code> https</code>.</small>
         <input type="text" class="form-control form-control-lg" name="url">
+        <div id="url-error" class="invalid-feedback"></div>
     </div>
 </div>
 

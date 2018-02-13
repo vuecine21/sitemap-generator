@@ -1,7 +1,5 @@
 /**
- * @description This module manages the sitemap generation process
- *
- * The process works as follows:
+ * @description This module crawls some website and generates a sitemap for it. The process works as follows:
  *
  * 1. on start the generator will create a rendering window and
  * open a tab for the start url; then wait for http headers response.
@@ -17,6 +15,12 @@
  * @namespace
  * @param {Object} config - configuration options
  * @param {string} config.url - the website/app path we want to crawl -- all sitemap entries will be such that they include this base url
+ * @param {String} config.requestDomain - Chrome url match pattern for above url @see {@link https://developer.chrome.com/apps/match_patterns|Match Patterns} 
+ * @param {Array<string>} config.contenttype_patterns - http response content types we want to include in the sitemap
+ * @param {Array<string>} config.exclude_extension - file extensions which should be automatically excluded, example: `['.png','.zip']`
+ * @param {Array<number>} config.success_codes - http response status codes which should be regarded as successful
+ * @param {number} config.maxTabCount - max number of tabs allowed to be open any given time
+ * @param {function} config.callback - *(optional)* function to call when sitemap generation has completed
  */
 var sitemapGenerator = function (config) {
 
@@ -39,32 +43,35 @@ var sitemapGenerator = function (config) {
     //////////////////////////
 
     /**
+     * @public
      * @memberof sitemapGenerator
-     * @description launch the generator
+     * @description Initiates crawling of some website
      */
     function start() {
 
         terminating = false;
 
-        // 1. register webRequest listener where we listen tosuccessful navigation events; 
-        addListeners();
-
-        // 2. create the invisible element where we render each url 
-        // --> could create frames queue to have multiple frames, to get this going faster?
-        listAdd(config.url, lists.processQueue);
-
-        // 3. Create rendering window then navigate to launch url
-        return centeredWindow(800, 700, launchPage, "normal")
+        // create window we will use for crawling
+        centeredWindow(800, 700, launchPage, "normal", true)
             .then(function (window) {
+                console.log(window);
                 targetRenderer = window.id;
+
+                // 1. register webRequest listener where we listen to successful http request events; 
+                addListeners();
+
+                // 2. add the first url to processing queue
+                listAdd(config.url, lists.processQueue);
+
+                // 3. navigate to first url
                 navigateToNext();
             });
-
     }
 
     /**
+     * @public
      * @memberof sitemapGenerator
-     * @description terminate the generator before it exits naturally
+     * @description Terminates sitemap generator before it completes naturally
      */
     function terminate() {
         if (terminating) return;
@@ -72,8 +79,9 @@ var sitemapGenerator = function (config) {
     }
 
     /**
+     * @public
      * @memberof sitemapGenerator
-     * @description get stats about processing status
+     * @description Get stats about ongoing processing status
      */
     function status() {
         return {
@@ -86,18 +94,25 @@ var sitemapGenerator = function (config) {
     }
 
     /**
+     * @public
      * @memberof sitemapGenerator
-     * @description when crawling a page the page is set specifically to not be index we must remove it
-     * @param url
+     * @description Tell generator not to include specific url in the sitemap
+     * @param {String} url - the url that should not be included in the sitemap
      */
     function noindex(url) {
         url = encodeURI(url);
+        listAdd(url, lists.completedUrls);
         var successIndex = lists.successUrls.indexOf(url);
         if (successIndex > -1) lists.successUrls.splice(successIndex);
     }
 
     //////////////////////////
 
+    /**
+     * @private
+     * @memberof sitemapGenerator
+     * @description this function creates the sitemap and downloads it, then opens or activates downloads tab
+     */
     function makeSitemap() {
 
         var windowCloseError = chrome.runtime.lastError; // ignore
@@ -113,12 +128,12 @@ var sitemapGenerator = function (config) {
             element.click();
 
             var downloads_page = "chrome://downloads";
-            chrome.tabs.query({url: downloads_page + "/*"}, function (result) {
+            chrome.tabs.query({ url: downloads_page + "/*" }, function (result) {
                 if (result && result.length)
                     chrome.tabs.reload(result[0].id, null, function () {
-                        chrome.tabs.update(result[0].id, {active: true});
+                        chrome.tabs.update(result[0].id, { active: true });
                     });
-                else chrome.tabs.create({url: downloads_page, active: true});
+                else chrome.tabs.create({ url: downloads_page, active: true });
             });
 
         }
@@ -126,12 +141,11 @@ var sitemapGenerator = function (config) {
         // for (var list in lists)
         //     console.log(list + "\r\n" + lists[list].join("\r\n"));
 
-
         var now = new Date();
         var lastmod = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
 
         var sitemap = lists.successUrls.sort().map(function (u) {
-            return "<url><loc>" + encodeURI(u) + "</loc><lastmod>" + lastmod + "</lastmod></url>";
+            return "<url><loc>" + encodeURI(u) + "</loc></url>";
         });
 
         sitemap = [
@@ -145,6 +159,7 @@ var sitemapGenerator = function (config) {
     }
 
     /**
+     * @private
      * @memberof sitemapGenerator
      * @description execute everytime when processing is done, independed of why processing ended
      */
@@ -155,7 +170,7 @@ var sitemapGenerator = function (config) {
         clearInterval(progressInterval);
 
         (function closeRenderer() {
-            chrome.tabs.query({windowId: targetRenderer, url: config.requestDomain}, function (result) {
+            chrome.tabs.query({ windowId: targetRenderer, url: config.requestDomain }, function (result) {
                 if (result.length > 0) {
                     for (var i = 0; i < result.length; i++)
                         chrome.tabs.remove(result[i].id);
@@ -172,85 +187,92 @@ var sitemapGenerator = function (config) {
     }
 
     /**
+     * @private
+     * @memberof sitemapGenerator
+     * @description when urls are discovered through some means, this function determines
+     * how they should be handled
+     * @param {Array<String>} urls - the urls to process
+     */
+    function processDiscoveredUrls(urls) {
+        (urls || []).map(function (u) {
+
+            // make sure all urls are encoded
+            u = encodeURI(u);
+
+            // if there is successful entry for hashbang path
+            // automatically record save result for the hashbang path
+            if (u.indexOf("#!") > 0) {
+                var page = u.substr(0, u.indexOf("#!"));
+                if (lists.successUrls.indexOf(page) > -1) {
+                    listAdd(u, lists.completedUrls);
+                    listAdd(u, lists.successUrls);
+                }
+                if (lists.errorHeaders.indexOf(page) > -1) {
+                    listAdd(u, lists.completedUrls);
+                    listAdd(u, lists.errorHeaders);
+                }
+            }
+
+            // else strip anything following hash
+            else if (u.indexOf("#") > 0) {
+                u = u.substr(0, u.indexOf("#"));
+            }
+
+            return u;
+
+        }).filter(function (u) {
+
+            // filter for everything that is clearly not html or text
+            var badFileExtension = false;
+            var test = u.replace(config.url, "");
+
+            if (test.indexOf("/") > -1) {
+                var parts = test.split("/");
+                var last = parts[parts.length - 1];
+                if (last.length) {
+                    badFileExtension = exclude_extension.filter(function (f) {
+                        return (last.indexOf(f) > 0);
+                    }).length > 0;
+                }
+            }
+
+            // filter down to new urls in target domain
+            return u.indexOf(config.url) === 0 &&
+                (lists.completedUrls.indexOf(u) < 0) &&
+                (lists.processQueue.indexOf(u) < 0) &&
+                !badFileExtension;
+
+        }).map(function (u) {
+
+            // if url makes it this far add it to queue
+            listAdd(u, lists.processQueue);
+
+        });
+    }
+
+    /**
+     * @private
      * @memberof sitemapGenerator
      * @description listen to messages sent from content script back to the generator instance
      */
     function receiveUrlFromContent(request, sender) {
 
-        // 5. Content script will send back all discovered links
-        if (request.urls) {
-            request.urls.map(function (u) {
+        processDiscoveredUrls(request.urls);
 
-                // make sure all urls are encoded
-                u = encodeURI(u);
+        chrome.tabs.remove(sender.tab.id, function () {
+            var pass = (chrome.runtime.lastError);
+        });
 
-                // if there is successful entry for hashbang path
-                // automatically record save result for the hashbang path
-                if (u.indexOf("#!") > 0) {
-                    var page = u.substr(0, u.indexOf("#!"));
-                    if (lists.successUrls.indexOf(page) > -1) {
-                        listAdd(u, lists.completedUrls);
-                        listAdd(u, lists.successUrls);
-                    }
-                    if (lists.errorHeaders.indexOf(page) > -1) {
-                        listAdd(u, lists.completedUrls);
-                        listAdd(u, lists.errorHeaders);
-                    }
-                }
-
-                // else strip anything following hash
-                else if (u.indexOf("#") > 0) {
-                    u = u.substr(0, u.indexOf("#"));
-                }
-
-                return u;
-
-            }).filter(function (u) {
-
-                // filter for everything that is clearly not html or text
-                var badFileExtension = false;
-                var test = u.replace(config.url, "");
-
-                if (test.indexOf("/") > -1) {
-                    var parts = test.split("/");
-                    var last = parts[parts.length - 1];
-                    if (last.length) {
-                        badFileExtension = exclude_extension.filter(function (f) {
-                            return (last.indexOf(f) > 0);
-                        }).length > 0;
-                    }
-                }
-
-                // filter down to new urls in target domain
-                return u.indexOf(config.url) === 0 &&
-                    (lists.completedUrls.indexOf(u) < 0) &&
-                    (lists.processQueue.indexOf(u) < 0) &&
-                    !badFileExtension;
-
-            }).map(function (u) {
-
-                // if url makes it this far add it to queue
-                listAdd(u, lists.processQueue);
-
-            });
-
-            if (lists.completedUrls.length === 1) {
-                progressInterval = setInterval(navigateToNext, 500);
-                navigateToNext();
-            }
-
-            chrome.tabs.remove(sender.tab.id, function () {
-                var pass = (chrome.runtime.lastError);
-            });
-
-            if (lists.processQueue.length < 1) {
-                return onComplete();
-            }
-        }
+        if (lists.completedUrls.length === 1) {
+            progressInterval = setInterval(navigateToNext, 500);
+            navigateToNext();
+        } else if (lists.processQueue.length < 1)
+            return onComplete();
     }
 
-    /**
-     * @memberOf sitemapGenerator
+    /** 
+     * @private
+     * @memberof sitemapGenerator 
      * @description listen to headers to determine type and cancel and
      * close tab immediately if the detected content type is not on the
      * list of target types
@@ -271,11 +293,36 @@ var sitemapGenerator = function (config) {
         }
         if (!valid_type || terminating) {
             chrome.tabs.remove(tabId);
-            return {cancel: true};
+            return { cancel: true };
         }
     }
 
+    /** 
+     * @private
+     * @memberof sitemapGenerator 
+     * @description whenever request causes redirect, handle the redirect url
+     * and terminate current request
+     */
+    function onBeforeRedirect(details) {
+
+        console.log("heard redirect headers....");
+        // if (details.redirectUrl)
+        //     processDiscoveredUrls([details.redirectUrl]);
+
+        // // if very first url is redirect
+        // if (lists.completedUrls.length === 1) {
+        //     progressInterval = setInterval(navigateToNext, 500);
+        //     navigateToNext();
+        // } else if (lists.processQueue.length < 1)
+        //     return onComplete();
+
+        // console.log("terminating redirecting tab....", details.url);
+        // chrome.tabs.remove(details.tabId);
+        // return { cancel: true };
+    }
+
     /**
+     * @private
      * @memberof sitemapGenerator
      * @description Listen to incoming webrequest headers
      */
@@ -307,6 +354,7 @@ var sitemapGenerator = function (config) {
     }
 
     /**
+     * @private
      * @memberof sitemapGenerator
      * @description if tab errors, cloe it and load next one
      */
@@ -318,36 +366,43 @@ var sitemapGenerator = function (config) {
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @private
+     * @memberof sitemapGenerator 
      * @description add listeners to track response headers and to receive messages
      * from the opened tabs
      */
     function addListeners() {
         chrome.webRequest.onHeadersReceived.addListener(onHeadersReceivedHandler,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+        chrome.webRequest.onBeforeRedirect.addListener(onBeforeRedirect,
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onCompleted.addListener(onTabLoadListener,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.addListener(onTabErrorHandler,
-            {urls: [config.requestDomain], types: ['main_frame']});
+            { urls: [config.requestDomain], types: ['main_frame'] });
         chrome.runtime.onMessage.addListener(receiveUrlFromContent);
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @private
+     * @memberof sitemapGenerator 
      * @description when processing is done remove all event listeners
      */
     function removeListeners() {
         chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceivedHandler,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+        chrome.webRequest.onBeforeRedirect.removeListener(onBeforeRedirect,
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onCompleted.removeListener(onTabLoadListener,
-            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
+            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.removeListener(onTabErrorHandler,
-            {urls: [config.requestDomain], types: ['main_frame']});
+            { urls: [config.requestDomain], types: ['main_frame'] });
         chrome.runtime.onMessage.removeListener(receiveUrlFromContent);
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @private
+     * @memberof sitemapGenerator 
      * @description move url to a specific processing queue
      */
     function listAdd(url, list) {
@@ -355,7 +410,8 @@ var sitemapGenerator = function (config) {
     }
 
     /**
-     * @memberOf sitemapGenerator
+     * @private
+     * @memberof sitemapGenerator 
      * @description take first queued url and create new tab for that url
      */
     function navigateToNext() {
@@ -363,13 +419,19 @@ var sitemapGenerator = function (config) {
             return false;
 
         var nextUrl = lists.processQueue.shift();
-        listAdd(nextUrl, lists.completedUrls);
+        console.log("maybe navigating to...", nextUrl);
 
-        chrome.tabs.query({windowId: targetRenderer}, function (result) {
+        // skip if some url has been added to queue multiple times
+        if (lists.completedUrls.indexOf(nextUrl) > -1)
+            return navigateToNext();
 
-            // if max tabs already open put the url back in the queue and exit
+        chrome.tabs.query({ windowId: targetRenderer }, function (result) {
+
+            // if max tabs already open, put the url back in the queue and exit
             if (result.length > maxTabCount)
                 return listAdd(nextUrl, lists.processQueue);
+            else
+                listAdd(nextUrl, lists.completedUrls);
 
             chrome.tabs.create({
                 url: nextUrl,

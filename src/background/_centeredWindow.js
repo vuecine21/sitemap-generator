@@ -3,11 +3,10 @@
  * @param {number} height - height of the new window (px)
  * @param {String} url - url to open
  * @param {String} type - "normal" or "popup"; defaults to "popup"
+ * @param {boolean} focused - if window should have focus, default true
  * @returns {Promise}
- *  @description Opens centered window in the middle of user's monitor viewport.
- *
+ * @description Opens centered window in the middle of user's monitor viewport.
  * If user has multiple monitors this method launches window in the first/leftmost monitor.
- *
  * This method requires `system.display` permission in `manifest.json`
  */
 function centeredWindow(width, height, url, type, focused) {

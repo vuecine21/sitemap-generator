@@ -6,30 +6,26 @@
     -   [backgroundEvents](#backgroundevents)
         -   [onMessageHandler](#onmessagehandler)
         -   [onInstalledEvent](#oninstalledevent)
+        -   [newSession](#newsession)
         -   [launchGenerator](#launchgenerator)
     -   [sitemapGenerator](#sitemapgenerator)
         -   [start](#start)
         -   [terminate](#terminate)
         -   [status](#status)
         -   [noindex](#noindex)
-        -   [onComplete](#oncomplete)
-        -   [receiveUrlFromContent](#receiveurlfromcontent)
-        -   [onTabLoadListener](#ontabloadlistener)
-        -   [onTabErrorHandler](#ontaberrorhandler)
--   [Content Scripts](#content-scripts)
+    -   [centeredWindow](#centeredwindow)
+-   [Client-Side Crawler](#client-side-crawler)
     -   [crawler](#crawler)
--   [centeredWindow](#centeredwindow)
--   [configureGenerator](#configuregenerator)
--   [onHeadersReceivedHandler](#onheadersreceivedhandler)
--   [addListeners](#addlisteners)
--   [removeListeners](#removelisteners)
--   [listAdd](#listadd)
--   [navigateToNext](#navigatetonext)
--   [appendCodeFragment](#appendcodefragment)
+        -   [appendCodeFragment](#appendcodefragment)
+        -   [getRobotsMeta](#getrobotsmeta)
+        -   [findLinks](#findlinks)
+-   [User Interface](#user-interface)
+    -   [setup](#setup)
+    -   [processing](#processing)
 
 ## Background
 
-The main logic of this extension happens in the background pages of the extension.
+The extension background context manages the sitemap generation process.
 
 
 ### backgroundEvents
@@ -38,41 +34,71 @@ Listens to relevant events in the browser and responds accordingly
 
 #### onMessageHandler
 
-Listen to generator termination request
+-   **See: [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)**
+
+Listen to messages sent from ui pages to background. This is meant to
+provide ways for end user to interact with the generator.
 
 **Parameters**
 
--   `request`  
--   `sender`  
--   `sendResponse`  
+-   `request`  message parameters
+    -   `request.start`  starts generator
+    -   `request.terminate`  stops generator
+    -   `request.status`  gets current processing status
+    -   `request.noindex`  tells generator not to index some url, see example below
+-   `sender`  details on which window/tab send the message,
+-   `sendResponse`  when sender expects a response, this value should be the callback function, see example below.
+
+**Examples**
+
+```javascript
+chrome.runtime.sendMessage({ start: config });
+```
+
+```javascript
+chrome.runtime.sendMessage({ terminate: true });
+```
+
+```javascript
+chrome.runtime.sendMessage({ noindex: "https://www.google.com" });
+```
+
+```javascript
+chrome.runtime.sendMessage({ status: true }, function callback(response) {});
+```
 
 #### onInstalledEvent
 
 This handler runs when user first installs the extension.
-It should launch a demo or some other way to explain how the extension works.
+This method launches a welcome page with instructions how to to use the extension.
 
 **Parameters**
 
--   `details` **any** chrome provided parameter; indicates if this is new install or update
+-   `details` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** chrome provides this parameter, @see [OnIstalled](https://developer.chrome.com/apps/runtime#event-onInstalled)
+
+#### newSession
+
+When user clicks extension icon, launch the session configuration page.
+Also read the url of the active tab and provide that as the default url to crawl on the setup page.
+
+**Parameters**
+
+-   `tab`  current active tab, @see [onClicked](https://developer.chrome.com/extensions/browserAction#event-onClicked)
 
 #### launchGenerator
 
-When some launch event occurs, this function will
-
--   determine the url to crawl (i.e. optional parameter or active tab)
--   make sure the extension has permission to access that domain
--   kick off a crawling sessions
+This function gets called when user is ready to start new crawling session.
+At this point in time the extension will make sure the extension has been granted all necessary 
+permissions, then start the generator.
 
 **Parameters**
 
--   `config`  
--   `sender`  
+-   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** configration details @see [sitemapGenerator](#sitemapgenerator)
+-   `sender`  details on which window/tab send the message, @see [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)
 
 ### sitemapGenerator
 
-This module manages the sitemap generation process
-
-The process works as follows:
+This module crawls some website and generates a sitemap for it. The process works as follows:
 
 1.  on start the generator will create a rendering window and
     open a tab for the start url; then wait for http headers response.
@@ -89,77 +115,37 @@ The process works as follows:
 
 -   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** configuration options
     -   `config.url` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the website/app path we want to crawl -- all sitemap entries will be such that they include this base url
+    -   `config.requestDomain` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Chrome url match pattern for above url @see [Match Patterns](https://developer.chrome.com/apps/match_patterns)
+    -   `config.contenttype_patterns` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>** http response content types we want to include in the sitemap
+    -   `config.exclude_extension` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>** file extensions which should be automatically excluded, example: `['.png','.zip']`
+    -   `config.success_codes` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** http response status codes which should be regarded as successful
+    -   `config.maxTabCount` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** max number of tabs allowed to be open any given time
+    -   `config.callback` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** _(optional)_ function to call when sitemap generation has completed
 
 #### start
 
-launch the generator
+Initiates crawling of some website
 
 #### terminate
 
-terminate the generator before it exits naturally
+Terminates sitemap generator before it completes naturally
 
 #### status
 
-get stats about processing status
+Get stats about ongoing processing status
 
 #### noindex
 
-when crawling a page the page is set specifically to not be index we must remove it
+Tell generator not to include specific url in the sitemap
 
 **Parameters**
 
--   `url`  
+-   `url` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the url that should not be included in the sitemap
 
-#### onComplete
-
-execute everytime when processing is done, independed of why processing ended
-
-#### receiveUrlFromContent
-
-listen to messages sent from content script back to the generator instance
-
-**Parameters**
-
--   `request`  
--   `sender`  
-
-#### onTabLoadListener
-
-Listen to incoming webrequest headers
-
-**Parameters**
-
--   `details`  
-
-#### onTabErrorHandler
-
-if tab errors, cloe it and load next one
-
-**Parameters**
-
--   `details`  
-
-## Content Scripts
-
-While sitemap generation is ongoing this extension will load content scripts
-in the tabs that are being crawled. The purpose of these scripts is to wait for
-the page to load then look for anchor tags on the page and send them to the background page.
-
-The background page controls all of hte following aspects: 1) opening tabs,
-2) initiating the client side crawling by loading the content script and 3) closing
-the tab once the crawling has completed
-
-
-### crawler
-
-this module gets loaded in a tab and it looks for links on the page
-
-## centeredWindow
+### centeredWindow
 
 Opens centered window in the middle of user's monitor viewport.
-
 If user has multiple monitors this method launches window in the first/leftmost monitor.
-
 This method requires `system.display` permission in `manifest.json`
 
 **Parameters**
@@ -168,55 +154,49 @@ This method requires `system.display` permission in `manifest.json`
 -   `height` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** height of the new window (px)
 -   `url` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** url to open
 -   `type` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** "normal" or "popup"; defaults to "popup"
--   `focused`  
+-   `focused` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** if window should have focus, default true
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
-## configureGenerator
+## Client-Side Crawler
 
-launch the setup page where user can configure their
-session options
+The crawler is responsible for finding urls in in the crawled documents.
 
-**Parameters**
 
--   `tab`  
+### crawler
 
-## onHeadersReceivedHandler
+The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
 
-listen to headers to determine type and cancel and
-close tab immediately if the detected content type is not on the
-list of target types
+#### appendCodeFragment
 
-**Parameters**
-
--   `details`  
-
-## addListeners
-
-add listeners to track response headers and to receive messages
-from the opened tabs
-
-## removeListeners
-
-when processing is done remove all event listeners
-
-## listAdd
-
-move url to a specific processing queue
-
-**Parameters**
-
--   `url`  
--   `list`  
-
-## navigateToNext
-
-take first queued url and create new tab for that url
-
-## appendCodeFragment
-
-Append fragment of js code into document head
+Append some js code fragment in current document DOM
 
 **Parameters**
 
 -   `jsCodeFragment` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the code you want to execute in the document context
+
+#### getRobotsMeta
+
+Look for "robots" meta tag in the page header and if found return its contents
+
+#### findLinks
+
+Looks for links on the page, then send a message with findings to background page
+
+## User Interface
+
+The UI pages are extension pages allowing user to control the sitemap generation process and interaction with the sitemap generator.
+
+There are currectly two views: 
+
+-   `Setup` - page where user can configure their preferences
+-   `Processing` - page shows while sitemap generation is in progress
+
+
+### setup
+
+This module is used to configure runtime params for sitemap generation
+
+### processing
+
+This module is used to configure runtime params for sitemap generation

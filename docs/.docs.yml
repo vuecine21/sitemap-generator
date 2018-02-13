@@ -1,19 +1,26 @@
 toc:
 - name: Background
   description: |
-    The main logic of this extension happens in the background pages of the extension.
+    The extension background context manages the sitemap generation process.
   children:
     - backgroundEvents
     - sitemapGenerator
-- name: Content Scripts
+    - centeredWindow
+
+- name: Client-Side Crawler
   description: |
-    While sitemap generation is ongoing this extension will load content scripts
-    in the tabs that are being crawled. The purpose of these scripts is to wait for
-    the page to load then look for anchor tags on the page and send them to the background page.
-
-    The background page controls all of hte following aspects: 1) opening tabs,
-    2) initiating the client side crawling by loading the content script and 3) closing
-    the tab once the crawling has completed
-
+    The crawler is responsible for finding urls in in the crawled documents.
   children:
     - crawler
+
+- name: User Interface
+  description: |
+    The UI pages are extension pages allowing user to control the sitemap generation process and interaction with the sitemap generator.
+    
+    There are currectly two views: 
+    - `Setup` - page where user can configure their preferences
+    - `Processing` - page shows while sitemap generation is in progress
+
+  children:
+    - setup
+    - processing

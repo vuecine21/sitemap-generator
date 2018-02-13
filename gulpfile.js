@@ -29,10 +29,21 @@ gulp.task('default',
     ['build', 'jshint', 'watch']);
 
 gulp.task('release', function () {
-    var version = JSON.parse(fs.readFileSync(paths.manifest, 'utf8')).version_name;
+    var version = JSON.parse(fs.readFileSync(paths.package, 'utf8')).version;
+
+    fs.readFile(paths.readme, 'utf8', function (err, data) {
+        if (err) {
+            return console.log(err);
+        }
+        var result = data.replace(/latest-v[0-9\.]+/, "latest-v" + version);
+        fs.writeFile(paths.readme, result, 'utf8', function (err) {
+            if (err) return console.log(err);
+        });
+    });
+
     return gulp.src(paths.dist + '/**/*')
-        .pipe($.zip('release.' + version + '.zip'))
-        .pipe(gulp.dest(paths.publish));
+        .pipe($.zip(version + '.zip'))
+        .pipe(gulp.dest(paths.releases + '/'));
 });
 
 /** ============================
