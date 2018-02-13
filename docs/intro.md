@@ -32,7 +32,11 @@ Why it is needed: This permission appears when extension is requesting ability t
 
 <hr/>
 
-**Thank you for installing sitemap generator extension. We hope you enjoy it. Please share and rate your experience at Chrome Web Store.**  
+**Thank you for installing sitemap generator extension! We hope you enjoy it. Please share with your friends and rate your experience at Chrome Web Store.**  
 
 
 {% include_relative ga.html %}
+
+<style>
+a.btn{display:none}
+</style>
