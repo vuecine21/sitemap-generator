@@ -12,3 +12,5 @@ permalink: /documentation
 {% include_relative nav.md %}
 
 {% include_relative ga.html %}
+
+{% include_relative docs_style.html %}
