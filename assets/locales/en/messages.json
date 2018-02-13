@@ -6,6 +6,6 @@
     "message": "Sitemap Generator"
   },
   "appDesc": {
-    "message": "Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for spa / dynamic web applications."
+    "message": "Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for dynamic single page (spa) applications."
   }
 }

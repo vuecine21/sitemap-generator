@@ -15,16 +15,20 @@ siteUrlInput.value = (siteUrl.indexOf("http") === 0) ? siteUrl : "";
 var startButton = document.getElementById("start");
 
 startButton.onclick = function (e) {
-    var url = siteUrlInput.value,
-        config = {
-            url: url,
-            requestDomain: (url + "/*"),
-            contenttype_patterns: ["text/html", "text/plain"],
-            exclude_extension: [".png", ".json", ".jpg", ".jpeg", ".js", ".css",
-                ".zip", ".mp3", ".mp4", ".ogg", ".avi", ".wav", ".webm", ".gif", ".ico"],
-            success_codes: [200, 201, 202, 203, 304],
-            maxTabCount: 25
-        };
+    var url = (siteUrlInput.value || '').trim();
+
+    if (url.indexOf("http://") !== 0 && url.indexOf("https://") !== 0)
+        return alert("Start the url with http:// or https://");
+
+    var config = {
+        url: url,
+        requestDomain: (url + "/*"),
+        contenttype_patterns: ["text/html", "text/plain"],
+        exclude_extension: [".png", ".json", ".jpg", ".jpeg", ".js", ".css",
+            ".zip", ".mp3", ".mp4", ".ogg", ".avi", ".wav", ".webm", ".gif", ".ico"],
+        success_codes: [200, 201, 202, 203, 304],
+        maxTabCount: 25
+    };
 
     chrome.runtime.sendMessage({start: config});
     e.target.innerText = "Starting....";
