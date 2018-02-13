@@ -1,10 +1,11 @@
 /**
- * @description this module is used to configure runtime params for sitemap generation
+ * @description This module is used to configure runtime params for sitemap generation
  * @namespace
  */
 (function processing() {
 
     /**
+     * @private
      * @memberof processing
      * @description Request information about current processing status from the background
      * then update the ui to reflect current status.
@@ -19,6 +20,7 @@
     }
 
     /**
+     * @private
      * @memberof processing
      * @description When user clicks button to terminate send message to background page
      * to terminate all processing. Closing the rendering window will ultimately have the same effect.

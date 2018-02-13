@@ -7,5 +7,8 @@
   },
   "appDesc": {
     "message": "Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for dynamic single page (spa) applications."
+  },
+  "permissionNotGranted": {
+    "message": "You did not authorize access to website domain"
   }
 }

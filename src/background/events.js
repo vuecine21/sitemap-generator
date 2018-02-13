@@ -8,15 +8,34 @@
     var introUrl = "https://sneeakco.github.io/sitemap-generator/intro";
     var setupPage = chrome.extension.getURL("setup.html");
 
-    chrome.browserAction.onClicked.addListener(configureGenerator);
+    chrome.browserAction.onClicked.addListener(newSession);
     chrome.runtime.onInstalled.addListener(onInstalledEvent);
     chrome.runtime.onMessage.addListener(onMessageHandler);
 
     //////////////////////////
 
     /**
+     * @function
      * @memberof backgroundEvents
-     * @description Listen to generator termination request
+     * @description Listen to messages sent from ui pages to background. This is meant to
+     * provide ways for end user to interact with the generator.
+     * @param request - message parameters
+     * @param request.start - starts generator
+     * @param request.terminate - stops generator
+     * @param request.status - gets current processing status
+     * @param request.noindex - tells generator not to index some url, see example below
+     * @param sender - details on which window/tab send the message,
+     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     * @param sendResponse - when sender expects a response, this value should be the callback function, see example below.
+     * 
+     * @example chrome.runtime.sendMessage({ start: config });
+     *
+     * @example chrome.runtime.sendMessage({ terminate: true });
+     *
+     * @example chrome.runtime.sendMessage({ noindex: "https://www.google.com" });
+     *
+     * @example chrome.runtime.sendMessage({ status: true }, function callback(response) {});
+     * 
      */
     function onMessageHandler(request, sender, sendResponse) {
         if (request.terminate) {
@@ -36,21 +55,23 @@
     /**
      * @memberof backgroundEvents
      * @description This handler runs when user first installs the extension.
-     * It should launch a demo or some other way to explain how the extension works.
-     * @param {*} details - chrome provided parameter; indicates if this is new install or update
+     * This method launches a welcome page with instructions how to to use the extension.
+     * @param {Object} details - chrome provides this parameter, @see {@link https://developer.chrome.com/apps/runtime#event-onInstalled|OnIstalled}
      */
     function onInstalledEvent(details) {
         if (details.reason === "install") {
-            chrome.tabs.create({url: introUrl});
+            chrome.tabs.create({ url: introUrl });
         }
     }
 
     /**
      * @memberof backgroundEvents
-     * @description launch the setup page where user can configure their
-     * session options
+     * @description When user clicks extension icon, launch the session configuration page.
+     * Also read the url of the active tab and provide that as the default url to crawl on the setup page.
+     * 
+     * @param tab - current active tab, @see {@link https://developer.chrome.com/extensions/browserAction#event-onClicked|onClicked}
      */
-    function configureGenerator(tab) {
+    function newSession(tab) {
         if (generator) return;
 
         var appPath = tab.url;
@@ -66,10 +87,11 @@
 
     /**
      * @memberof backgroundEvents
-     * @description When some launch event occurs, this function will
-     * - determine the url to crawl (i.e. optional parameter or active tab)
-     * - make sure the extension has permission to access that domain
-     * - kick off a crawling sessions
+     * @description This function gets called when user is ready to start new crawling session.
+     * At this point in time the extension will make sure the extension has been granted all necessary 
+     * permissions, then start the generator.
+     * @param {Object} config - configration details @see {@link sitemapGenerator}
+     * @param sender - details on which window/tab send the message, @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
      */
     function launchGenerator(config, sender) {
         if (generator) return;
@@ -88,16 +110,12 @@
             // request access to target domain then start session if permission granted
             // else notify user
             chrome.permissions.request({
-                    permissions: ['tabs'],
-                    origins: [config.requestDomain]
-                },
-                function (granted) {
-                    if (!granted)
-                        return alert("You did not authorize access to domain: " + config.url);
-                    return sender.tab ?
-                        chrome.tabs.remove(sender.tab.id, startSession) :
-                        startSession();
-                }
+                permissions: ['tabs'],
+                origins: [config.requestDomain]
+            }, function (granted) {
+                return (granted) ? startSession() :
+                    alert(chrome.i18n.getMessage("permissionNotGranted"));
+            }
             );
         });
     }

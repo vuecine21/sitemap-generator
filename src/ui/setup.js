@@ -1,5 +1,5 @@
 /**
- * @description this module is used to configure runtime params for sitemap generation
+ * @description This module is used to configure runtime params for sitemap generation
  * @namespace
  */
 (function setup() {
@@ -8,6 +8,7 @@
     var siteUrlInputError = document.getElementById("url-error");
 
     /**
+     * @private
      * @memberof setup
      * @description Get some value from querystring
      * @param {*} name key 
@@ -24,6 +25,7 @@
     }
 
     /**     
+     * @private
      * @memberof setup
      * @description Handle start button click -> this will check user inputs 
      * and if successful, send message to background page to initiate crawling.

@@ -1,5 +1,5 @@
 /**
- * @description this module gets loaded in a tab and it looks for links on the page
+ * @description The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
  * @namespace
  */
 (function crawler() {
@@ -9,7 +9,7 @@
     /**
      * @function
      * @memberof crawler
-     * @description Append some fragment of js code into document head
+     * @description Append some js code fragment in current document DOM
      * @param {String} jsCodeFragment - the code you want to execute in the document context
      */
     function appendCodeFragment(jsCodeFragment) {
@@ -29,7 +29,7 @@
     /**
      * @function
      * @memberof crawler
-     * @description look for "robots" meta tag in the page header and if found return its contents
+     * @description Look for "robots" meta tag in the page header and if found return its contents
      */
     function getRobotsMeta() {
         var metas = document.getElementsByTagName('meta');
@@ -45,7 +45,7 @@
     /**
      * @function
      * @memberof crawler
-     * @description this function looks for links on the page then sends a message to background bage with the result
+     * @description Looks for links on the page, then send a message with findings to background page
      */
     function findLinks() {
 
@@ -90,16 +90,11 @@
 
         // wait for onload
         window.onload = findLinks;
-        
+
         // but ensure the function will ultimately run
         setTimeout(findLinks, 500);
 
     }());
-
-
-
-
-
 
 
 }());
