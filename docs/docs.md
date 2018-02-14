@@ -13,6 +13,7 @@
         -   [terminate](#terminate)
         -   [status](#status)
         -   [noindex](#noindex)
+        -   [urlMessage](#urlmessage)
     -   [centeredWindow](#centeredwindow)
 -   [Client-Side Crawler](#client-side-crawler)
     -   [crawler](#crawler)
@@ -34,8 +35,6 @@ Listens to relevant events in the browser and responds accordingly
 
 #### onMessageHandler
 
--   **See: [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)**
-
 Listen to messages sent from ui pages to background. This is meant to
 provide ways for end user to interact with the generator.
 
@@ -47,7 +46,7 @@ provide ways for end user to interact with the generator.
     -   `request.status`  gets current processing status
     -   `request.urlMessage`  receive list of urls from crawler
     -   `request.noindex`  tells generator not to index some url, see example below
--   `sender`  details on which window/tab send the message,
+-   `sender`  details on which window/tab send the message, provided by chrome, @see [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)
 -   `sendResponse`  when sender expects a response, this value should be the callback function, see example below.
 
 **Examples**
@@ -75,7 +74,7 @@ This method launches a welcome page with instructions how to to use the extensio
 
 **Parameters**
 
--   `details` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** chrome provides this parameter, @see [OnIstalled](https://developer.chrome.com/apps/runtime#event-onInstalled)
+-   `details` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** provided by chrome @see [OnIstalled](https://developer.chrome.com/apps/runtime#event-onInstalled)
 
 #### newSession
 
@@ -84,7 +83,7 @@ Also read the url of the active tab and provide that as the default url to crawl
 
 **Parameters**
 
--   `tab`  current active tab, @see [onClicked](https://developer.chrome.com/extensions/browserAction#event-onClicked)
+-   `tab` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** current active tab, @see [onClicked](https://developer.chrome.com/extensions/browserAction#event-onClicked)
 
 #### launchGenerator
 
@@ -95,7 +94,7 @@ permissions, then start the generator.
 **Parameters**
 
 -   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** configration details @see [sitemapGenerator](#sitemapgenerator)
--   `sender`  details on which window/tab send the message, @see [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)
+-   `sender` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** details on which window/tab send the message, @see [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)
 
 ### sitemapGenerator
 
@@ -143,6 +142,15 @@ Tell generator not to include specific url in the sitemap
 
 -   `url` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the url that should not be included in the sitemap
 
+#### urlMessage
+
+Listen to messages sent from content script back to the generator instance
+
+**Parameters**
+
+-   `urls`  
+-   `sender`  
+
 ### centeredWindow
 
 Opens centered window in the middle of user's monitor viewport.
@@ -161,10 +169,12 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 ## Client-Side Crawler
 
-The crawler is responsible for finding urls in in the crawled documents.
+
 
 
 ### crawler
+
+The crawler is responsible for finding urls in in the requested documents.
 
 The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
 
@@ -200,4 +210,4 @@ This module is used to configure runtime params for sitemap generation
 
 ### processing
 
-This module is used to configure runtime params for sitemap generation
+This module is used to communicate with the generator while crawling is ongoing.

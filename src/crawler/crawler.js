@@ -1,5 +1,7 @@
 /**
- * @description The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
+ * @description The crawler is responsible for finding urls in in the requested documents.
+ * 
+ * The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
  * @namespace
  */
 (function crawler() {
