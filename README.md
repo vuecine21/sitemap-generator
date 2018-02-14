@@ -4,7 +4,7 @@
 ![alt text](https://img.shields.io/badge/latest-v0.0.3-8066d6.svg "version")
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/sneeakco/sitemap-generator.svg?branch=master)](https://travis-ci.org/sneeakco/sitemap-generator)
-[![Docs](http://inch-ci.org/github/sneeakco/sitemap-generator.svg?branch=master)](http://inch-ci.org/github/sneeakco/sitemap-generator.svg?branch=master)
+[![Docs](http://inch-ci.org/github/sneeakco/sitemap-generator.svg?branch=master)](https://inch-ci.org/github/sneeakco/sitemap-generator)
 
 
 
