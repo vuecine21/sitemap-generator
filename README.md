@@ -1,5 +1,5 @@
 
-<img src="assets/img/promo/tile_mq.png" alt="ScreeSitemap Generator" />
+<img src="assets/img/promo/screenshot_1.png" alt="Sitemap Generator" />
  
 ![alt text](https://img.shields.io/badge/latest-v0.0.3-8066d6.svg "version")
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,23 +23,18 @@ The latest version is available for installation at Chrome Web Store.
 
 **[Getting started](https://sneeakco.github.io/sitemap-generator/development "Development")**
 
-## Project background
+## Idea 💡
 
-I make a lot of web apps using react and angular. I know there are dev tools that allow generating sitemaps but these require more or less custom setup. I also tried online services that offer to create sitemaps, but found that these were not actually rendering the client side code. My last attempt was trying a service that said it would run in the browser but required some custom code be placed on the website to circumvent cors. At this point I gave up and made my own solution. 
+I make a lot of web apps using react and angular. I know there are dev tools that allow generating sitemaps but these require more or less custom setup. I also tried online services that offer to create sitemaps, but found that these were not actually rendering the client side code. My last attempt was trying a service that said it would run in the browser but required some custom code be placed on the website to circumvent cors. At this point I gave up and made my own solution. I decided to make a chrome extension because it addresses many of the issues that occur with the above solutions: 
 
-I decided to make a chrome extension because it addresses many of the issues that occur with the above solutions: 
+<div style="float:left;">
+<table><tr><td>✔️ Allows rendering javascript</td></tr>
+<tr><td>✔️ Avoids most server-side bottlenecks</td></tr>
+<tr><td>✔️ Can override CORS policies</td></tr>
+<tr><td>✔️ No application specific setup</td></tr>
+<tr><td>✔️ Accommodates website changes</td></tr>
+<tr><td>✔️ Suitable for non-technical users</td></tr></table></div>
 
-| benefits |
-| --- |
-| ✔️ Allows rendering javascript |
-| ✔️ Avoids most server-side bottlenecks |
-| ✔️ Can override CORS policies |
-| ✔️ No application specific setup |
-| ✔️ Accommodates website changes |
-| ✔️ Suitable for non-technical users |
+This extension works by taking some start URL, crawling that page for more links, and then recursively crawling those pages for more links. Once all found links have been checked, the extension generates a sitemap file. Of course this approach assumes website is properly using anchor tags to connect its contents. The extension also checks HTTP headers and excludes pages that return failing response codes.
 
-This extension works by taking some start URL, crawling that page for more links, and then recursively crawling those pages for more links. It also checks response headers. Once all found links have been checked, the extension generates a sitemap file. Of course this assumes the website is properly using anchor tags to connect its contents. It also checks robots meta header for noindex and nofollow. 
-
-This implementation is not practical if website contains tens of thousands of pages. It can however, crawl a few thousand entries in a reasonable amount of time. 
-
-There may be issues also with websites that do not link their content using anchor tags or respond to every request, including bad urls with 200 OK.
+This implementation is not practical if website contains tens of thousands of pages. It can however, crawl a few thousand entries in a reasonable amount of time.
