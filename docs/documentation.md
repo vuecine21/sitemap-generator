@@ -9,7 +9,7 @@ permalink: /documentation
 
 ### System diagram
 
-<img src="system.svg" alt="system diagram" style="max-width:600px;height:auto;">
+<img src="docs/system.svg" alt="system diagram" style="max-width:600px;height:auto;">
 
 {% include_relative docs.md %}
 
