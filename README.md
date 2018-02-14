@@ -1,5 +1,5 @@
 
-<img src="assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;" />
+<img src="assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;border:1px solid #ddd;" />
  
 ![alt text](https://img.shields.io/badge/latest-v0.0.3-8066d6.svg "version")
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
