@@ -45,6 +45,7 @@ provide ways for end user to interact with the generator.
     -   `request.start`  starts generator
     -   `request.terminate`  stops generator
     -   `request.status`  gets current processing status
+    -   `request.urlMessage`  receive list of urls from crawler
     -   `request.noindex`  tells generator not to index some url, see example below
 -   `sender`  details on which window/tab send the message,
 -   `sendResponse`  when sender expects a response, this value should be the callback function, see example below.
@@ -88,7 +89,7 @@ Also read the url of the active tab and provide that as the default url to crawl
 #### launchGenerator
 
 This function gets called when user is ready to start new crawling session.
-At this point in time the extension will make sure the extension has been granted all necessary 
+At this point in time the extension will make sure the extension has been granted all necessary
 permissions, then start the generator.
 
 **Parameters**

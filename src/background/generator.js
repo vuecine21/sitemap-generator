@@ -15,7 +15,7 @@
  * @namespace
  * @param {Object} config - configuration options
  * @param {string} config.url - the website/app path we want to crawl -- all sitemap entries will be such that they include this base url
- * @param {String} config.requestDomain - Chrome url match pattern for above url @see {@link https://developer.chrome.com/apps/match_patterns|Match Patterns} 
+ * @param {String} config.requestDomain - Chrome url match pattern for above url @see {@link https://developer.chrome.com/apps/match_patterns|Match Patterns}
  * @param {Array<string>} config.contenttype_patterns - http response content types we want to include in the sitemap
  * @param {Array<string>} config.exclude_extension - file extensions which should be automatically excluded, example: `['.png','.zip']`
  * @param {Array<number>} config.success_codes - http response status codes which should be regarded as successful
@@ -54,17 +54,15 @@ var sitemapGenerator = function (config) {
         // create window we will use for crawling
         centeredWindow(800, 700, launchPage, "normal", true)
             .then(function (window) {
-                console.log(window);
                 targetRenderer = window.id;
-
-                // 1. register webRequest listener where we listen to successful http request events; 
+                // 1. register webRequest listener where we listen to successful http request events;
                 addListeners();
-
                 // 2. add the first url to processing queue
                 listAdd(config.url, lists.processQueue);
-
                 // 3. navigate to first url
                 navigateToNext();
+                // 4. start interval that progressively works through the queue
+                progressInterval = setInterval(navigateToNext, 500);
             });
     }
 
@@ -106,6 +104,19 @@ var sitemapGenerator = function (config) {
         if (successIndex > -1) lists.successUrls.splice(successIndex);
     }
 
+    /**
+     * @private
+     * @memberof sitemapGenerator
+     * @description listen to messages sent from content script back to the generator instance
+     */
+    function urlMessage(urls, sender) {
+
+        processDiscoveredUrls(urls);
+
+        return !sender || !sender.tab ||
+            chrome.tabs.remove(sender.tab.id);
+    }
+
     //////////////////////////
 
     /**
@@ -128,12 +139,12 @@ var sitemapGenerator = function (config) {
             element.click();
 
             var downloads_page = "chrome://downloads";
-            chrome.tabs.query({ url: downloads_page + "/*" }, function (result) {
+            chrome.tabs.query({url: downloads_page + "/*"}, function (result) {
                 if (result && result.length)
                     chrome.tabs.reload(result[0].id, null, function () {
-                        chrome.tabs.update(result[0].id, { active: true });
+                        chrome.tabs.update(result[0].id, {active: true});
                     });
-                else chrome.tabs.create({ url: downloads_page, active: true });
+                else chrome.tabs.create({url: downloads_page, active: true});
             });
 
         }
@@ -170,7 +181,7 @@ var sitemapGenerator = function (config) {
         clearInterval(progressInterval);
 
         (function closeRenderer() {
-            chrome.tabs.query({ windowId: targetRenderer, url: config.requestDomain }, function (result) {
+            chrome.tabs.query({windowId: targetRenderer, url: config.requestDomain}, function (result) {
                 if (result.length > 0) {
                     for (var i = 0; i < result.length; i++)
                         chrome.tabs.remove(result[i].id);
@@ -253,31 +264,12 @@ var sitemapGenerator = function (config) {
     /**
      * @private
      * @memberof sitemapGenerator
-     * @description listen to messages sent from content script back to the generator instance
-     */
-    function receiveUrlFromContent(request, sender) {
-
-        processDiscoveredUrls(request.urls);
-
-        chrome.tabs.remove(sender.tab.id, function () {
-            var pass = (chrome.runtime.lastError);
-        });
-
-        if (lists.completedUrls.length === 1) {
-            progressInterval = setInterval(navigateToNext, 500);
-            navigateToNext();
-        } else if (lists.processQueue.length < 1)
-            return onComplete();
-    }
-
-    /** 
-     * @private
-     * @memberof sitemapGenerator 
      * @description listen to headers to determine type and cancel and
      * close tab immediately if the detected content type is not on the
      * list of target types
      */
     function onHeadersReceivedHandler(details) {
+
         if (!details.responseHeaders) return;
         var headers = details.responseHeaders,
             tabId = details.tabId,
@@ -291,34 +283,24 @@ var sitemapGenerator = function (config) {
                 break;
             }
         }
+
         if (!valid_type || terminating) {
             chrome.tabs.remove(tabId);
-            return { cancel: true };
+            return {cancel: true};
         }
     }
 
-    /** 
+    /**
      * @private
-     * @memberof sitemapGenerator 
-     * @description whenever request causes redirect, handle the redirect url
+     * @memberof sitemapGenerator
+     * @description whenever request causes redirect, put the new url in queue
      * and terminate current request
      */
     function onBeforeRedirect(details) {
-
-        console.log("heard redirect headers....");
-        // if (details.redirectUrl)
-        //     processDiscoveredUrls([details.redirectUrl]);
-
-        // // if very first url is redirect
-        // if (lists.completedUrls.length === 1) {
-        //     progressInterval = setInterval(navigateToNext, 500);
-        //     navigateToNext();
-        // } else if (lists.processQueue.length < 1)
-        //     return onComplete();
-
-        // console.log("terminating redirecting tab....", details.url);
-        // chrome.tabs.remove(details.tabId);
-        // return { cancel: true };
+        // console.log("heard redirect headers....", details.url);
+        processDiscoveredUrls([details.redirectUrl]);
+        chrome.tabs.remove(details.tabId);
+        return {cancel: true};
     }
 
     /**
@@ -367,42 +349,48 @@ var sitemapGenerator = function (config) {
 
     /**
      * @private
-     * @memberof sitemapGenerator 
-     * @description add listeners to track response headers and to receive messages
-     * from the opened tabs
+     * @memberof sitemapGenerator
+     * @description add listeners to track request outcome
+     *
+     * - onHeadersReceived is used to detect correct content type and status code
+     *   -> when these are incorrect we can terminate the request immediately
+     *
+     * - onBeforeRedirect is used to detect redirection headers
+     *
+     * - onCompleted when tab is ready for client side crawling
+     *
+     * - onErrorOccurred when there is a problem with tab and we can close
      */
     function addListeners() {
         chrome.webRequest.onHeadersReceived.addListener(onHeadersReceivedHandler,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
         chrome.webRequest.onBeforeRedirect.addListener(onBeforeRedirect,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
         chrome.webRequest.onCompleted.addListener(onTabLoadListener,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.addListener(onTabErrorHandler,
-            { urls: [config.requestDomain], types: ['main_frame'] });
-        chrome.runtime.onMessage.addListener(receiveUrlFromContent);
+            {urls: [config.requestDomain], types: ['main_frame']});
     }
 
     /**
      * @private
-     * @memberof sitemapGenerator 
+     * @memberof sitemapGenerator
      * @description when processing is done remove all event listeners
      */
     function removeListeners() {
         chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceivedHandler,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['blocking', 'responseHeaders']);
         chrome.webRequest.onBeforeRedirect.removeListener(onBeforeRedirect,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
         chrome.webRequest.onCompleted.removeListener(onTabLoadListener,
-            { urls: [config.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+            {urls: [config.requestDomain], types: ['main_frame']}, ['responseHeaders']);
         chrome.webRequest.onErrorOccurred.removeListener(onTabErrorHandler,
-            { urls: [config.requestDomain], types: ['main_frame'] });
-        chrome.runtime.onMessage.removeListener(receiveUrlFromContent);
+            {urls: [config.requestDomain], types: ['main_frame']});
     }
 
     /**
      * @private
-     * @memberof sitemapGenerator 
+     * @memberof sitemapGenerator
      * @description move url to a specific processing queue
      */
     function listAdd(url, list) {
@@ -411,36 +399,46 @@ var sitemapGenerator = function (config) {
 
     /**
      * @private
-     * @memberof sitemapGenerator 
+     * @memberof sitemapGenerator
      * @description take first queued url and create new tab for that url
      */
     function navigateToNext() {
-        if (lists.processQueue.length < 1 || terminating)
+        if (terminating)
             return false;
 
-        var nextUrl = lists.processQueue.shift();
-        console.log("maybe navigating to...", nextUrl);
+        chrome.tabs.query({
+            windowId: targetRenderer,
+            url: config.requestDomain
+        }, function (tabs) {
 
-        // skip if some url has been added to queue multiple times
-        if (lists.completedUrls.indexOf(nextUrl) > -1)
-            return navigateToNext();
+            var openTabsCount = (tabs || []).length;
+            // console.log(openTabsCount, lists.processQueue.length);
 
-        chrome.tabs.query({ windowId: targetRenderer }, function (result) {
+            if (openTabsCount === 0 &&
+                lists.processQueue.length === 0 &&
+                lists.completedUrls.length >= 1)
+                return onComplete();
 
-            // if max tabs already open, put the url back in the queue and exit
-            if (result.length > maxTabCount)
-                return listAdd(nextUrl, lists.processQueue);
-            else
-                listAdd(nextUrl, lists.completedUrls);
+            if (openTabsCount > maxTabCount ||
+                lists.processQueue.length === 0)
+                return false;
+
+            var nextUrl = lists.processQueue.shift();
+
+            // double check that we are not trying to open previously checked urls
+            if (lists.completedUrls.indexOf(nextUrl) >= 0)
+                return navigateToNext();
+
+            listAdd(nextUrl, lists.completedUrls);
 
             chrome.tabs.create({
                 url: nextUrl,
                 windowId: targetRenderer,
                 active: false
             }, function () {
-                if (chrome.runtime.lastError)
-                    terminate("Terminating because rendering window was closed");
+                if (chrome.runtime.lastError) terminate();
             });
+
         });
     }
 
@@ -450,7 +448,8 @@ var sitemapGenerator = function (config) {
         start: start,
         noindex: noindex,
         terminate: terminate,
-        status: status
+        status: status,
+        urlMessage: urlMessage
     };
 
 };
