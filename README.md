@@ -33,6 +33,7 @@ I make a lot of web apps using react and angular. I know there are dev tools tha
 
 - Allows rendering javascript
 - Avoids most server-side bottlenecks
+- Usable with any web tech stack
 - Can override CORS policies
 - No application specific setup
 - Accommodates website changes
