@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/sneeakco/sitemap-generator.svg?branch=master)](https://travis-ci.org/sneeakco/sitemap-generator)
 [![Docs](http://inch-ci.org/github/sneeakco/sitemap-generator.svg?branch=master)](https://inch-ci.org/github/sneeakco/sitemap-generator)
-
+[![devDependencies Status](https://david-dm.org/sneeakco/sitemap-generator/dev-status.svg)](https://david-dm.org/sneeakco/sitemap-generator?type=dev)
 
 
 **Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for dynamic single-page applications (SPAs).**
