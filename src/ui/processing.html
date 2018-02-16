@@ -1,102 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Sitemap Generator</title>
-    <style>
-        body {
-            background: #f2f2f2;
-            padding: 5% 10%;
-            font-size: 130%;
-            line-height: 1.5;
-            text-align: center;
-            color: #444;
-        }
-
-        #close {
-            display: table;
-            color: #fff;
-            font-weight: bold;
-            font-size: 80%;
-            border-radius: 40px;
-            line-height: 60px;
-            height: 60px;
-            text-align: center;
-            padding-left: 60px;
-            padding-right: 60px;
-            background: #55acee;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin: 0 auto;
-        }
-
-        #close:hover {
-            background: #35a2f4;
-        }
-
-        img {
-            width: 60px;
-            height: auto;
-        }
-
-        body > div {
-            display: table;
-            margin: 0 auto;
-        }
-
-        #status_bar {
-            margin: 50px auto 0 auto;
-            padding-top: 20px;
-            border-top: 2px dashed rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: row;
-            align-content: center;
-            justify-content: center;
-            text-transform: uppercase;
-            font-size: 80%;
-        }
-
-        #status_bar > div {
-            padding: 20px;
-            flex: 0 0 150px;
-        }
-
-        #status_bar span {
-            font-size: 150%;
-            font-weight: bold;
-            display: block;
-        }
-
-
-    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body>
 
-<img src="icons/bars.svg" alt="loader"/>
-<p><strong>Website crawl in progress:</strong>
-    <br/><i id="url"></i>
-    <br/><br/>You may continue your regular browsing in other windows.
-    <br/>If you want to interrupt processing
-</p>
-<span id="close">Close this window</span>
+    <img class="icon" src="icons/bars.svg" alt="loader" />
+    <h5>Website crawl in progress</h5>
 
-<div>
-    <div id="status_bar">
-        <div>
-            <span class="number" id="queue">0</span>
-            Remaining
-        </div>
-        <div>
-            <span class="number" id="completed">0</span>
-            Checked
-        </div>
-        <div>
-            <span class="number" id="success">0</span>
-            FOUND URLs
+    <div class="processing content">
+        <i id="url"></i>
+        <p>You may continue your regular browsing in other windows.</p>
+        <span class="button" id="close">Stop Processing</span>
+
+        <div class="status-wrapper">
+            <div id="status_bar">
+                <div>
+                    <span class="number" id="queue">0</span>
+                    Remaining
+                </div>
+                <div>
+                    <span class="number" id="completed">0</span>
+                    Checked
+                </div>
+                <div>
+                    <span class="number" id="success">0</span>
+                    Discovered
+                </div>
+            </div>
         </div>
     </div>
-</div>
-
-<script src="processing.js"></script>
+    <script src="processing.js"></script>
 </body>
+
 </html>

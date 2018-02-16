@@ -7,9 +7,7 @@ toc:
     - sitemapGenerator
     - centeredWindow
 
-- name: Client-Side Crawler
-  description: |
-    The crawler is responsible for finding urls in in the crawled documents.
+- name: Client-Side Crawler 
   children:
     - crawler
 

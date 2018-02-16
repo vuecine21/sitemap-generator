@@ -24,12 +24,13 @@
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 
-    /**     
+    /**    
+     * @event
      * @private
      * @memberof setup
      * @description Handle start button click -> this will check user inputs 
      * and if successful, send message to background page to initiate crawling.
-     * @param {Object} e 
+     * @param {Object} e - click event
      */
     function onStartButtonClick(e) {
 

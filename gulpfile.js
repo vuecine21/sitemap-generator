@@ -22,6 +22,7 @@ gulp.task('build', [
     'copy-locales',
     'build-html',
     'build-js',
+    'build-css',
     'gen-docs'
 ]);
 
@@ -60,6 +61,7 @@ gulp.task('watch', function () {
     gulp.watch(paths.html, ['build-html']);
     gulp.watch(paths.js, ['jshint', 'build-js', 'gen-docs']);
     gulp.watch(paths.locales + '**/*.json', ['copy-locales']);
+    gulp.watch(paths.scss, ['build-css']);
     gulp.watch(paths.manifest, ['copy-manifest']);
     gulp.watch(paths.icons, ['copy-images']);
 });
@@ -101,6 +103,14 @@ gulp.task('copy-manifest', function () {
         return gulp.src(paths.manifest)
             .pipe(gulp.dest(paths.dist));
     }
+});
+
+gulp.task('build-css', function () {
+    return gulp.src(paths.scss)
+        .pipe($.sass())
+        .pipe($.if(isProd, $.cleanCss()))
+        .pipe($.concat('styles.css'))
+        .pipe(gulp.dest(paths.dist + '/css'));
 });
 
 gulp.task('copy-images', function () {

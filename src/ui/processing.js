@@ -1,5 +1,5 @@
 /**
- * @description This module is used to configure runtime params for sitemap generation
+ * @description This module is used to communicate with the generator while crawling is ongoing.
  * @namespace
  */
 (function processing() {
@@ -20,10 +20,12 @@
     }
 
     /**
+     * @event
      * @private
      * @memberof processing
      * @description When user clicks button to terminate send message to background page
      * to terminate all processing. Closing the rendering window will ultimately have the same effect.
+     * @param {Object} e - click event
      */
     function onCloseButtonClick(e) {
         chrome.runtime.sendMessage({ terminate: true });

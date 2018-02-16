@@ -1,93 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Sitemap Generator</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-    <style>
-        body {
-            background: #f2f2f2;
-            padding: 5% 10%;
-            font-size: 130%;
-            line-height: 1.5;
-            text-align: center;
-            color: #444;
-        }
-
-        .content {
-            width: 100%;
-            display: table;
-            max-width: 1024px;
-            margin: 0 auto;
-            text-align: left;
-        }
-
-        small {
-            display: block;
-            font-size: 70%;
-            color: #777;
-        }
-
-        #start {
-            display: table;
-            color: #fff;
-            font-weight: bold;
-            font-size: 80%;
-            border-radius: 40px;
-            line-height: 60px;
-            height: 60px;
-            text-align: center;
-            padding-left: 60px;
-            padding-right: 60px;
-            background: #55acee;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin: 50px auto 0 auto;
-            min-width: 200px;
-        }
-
-        #start:hover {
-            background: #35a2f4;
-        }
-
-        img {
-            width: 60px;
-            height: auto;
-            margin: 0 auto 30px auto;
-            display: table;
-        }
-
-        label {
-            font-weight: bold;
-            font-size: 80%;
-        }
-        .invalid-feedback{
-            font-size:60%;
-        }
-        code{
-            color: rgb(49, 109, 240);
-        }
-
-    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body>
 
-<img src="icons/128x128.png" alt="sitema-generator"/>
-<p><strong>Configure your session then press start</strong></p>
+    <img class="icon" src="icons/128x128.png" alt="sitemap-generator" />
+    <h5>Configure your Session</h5> 
 
-<div class="content">
-    <div>
-        <label for="basic-url">Enter Website URL you want to crawl</label>
-        <small>Provide full absolute url starting with <code>http</code> or <code> https</code>.</small>
-        <input type="text" class="form-control form-control-lg" name="url">
-        <div id="url-error" class="invalid-feedback"></div>
+    <div class="content">
+        <div>
+            <label for="basic-url">Website URL</label> 
+            <input type="text" class="form-control" name="url" placeholder="Enter absolute url starting with http or https">
+            <div id="url-error" class="invalid-feedback"></div>
+        </div>
     </div>
-</div>
 
-<span id="start">Start</span>
-<script src="setup.js"></script>
+    <span class="button" id="start">Start</span>
+    <script src="setup.js"></script>
 
 </body>
+
 </html>

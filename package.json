@@ -1,6 +1,6 @@
 {
   "name": "sitemap-generator",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "use chrome browser to generate sitemaps for your websites. This extension crawls website like end user and checks and paths actually work.",
   "keywords": [
     "keywords"
@@ -15,7 +15,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sneeakco/____.git"
+    "url": "https://github.com/sneeakco/sitemap-generator.git"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
