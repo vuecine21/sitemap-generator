@@ -1,5 +1,5 @@
 
-<img src="assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;" />
+<img src="https://raw.githubusercontent.com/sneeakco/sitemap-generator/master/assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;" />
  
 ![alt text](https://img.shields.io/badge/latest-v0.0.4-55acee.svg "version") 
 [![Build Status](https://travis-ci.org/sneeakco/sitemap-generator.svg?branch=master)](https://travis-ci.org/sneeakco/sitemap-generator) 
