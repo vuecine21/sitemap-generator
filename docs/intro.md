@@ -17,7 +17,7 @@ permalink: /intro
 
 ### A few words about permissions
 
-<img src="docs/prompt.png" alt="permissions" />
+<img src="prompt.png" alt="permissions" />
 
 When you use use the extension to crawl some domain for the first time you should see the above prompt. The permissions are required for the sitemap generation to be successful, so make sure you choose `Allow`.
 
