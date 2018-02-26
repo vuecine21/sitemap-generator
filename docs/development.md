@@ -11,53 +11,55 @@ permalink: /development
 
 Directory/File | Purpose
 --- | ---
+`assets` | extension static resources
 `assets > img > icons` | extension icons
 `assets > img > promo` | promo images
-`assets > locales` | i18n for different supported languages
+`assets > locales` | string dictionaries for supported languages
+`docs` | web content for gh-pages
 `src` | source code
+`src/manifest.json` |  [extension manifest](https://developer.chrome.com/extensions/manifest "extension manifest")
 `test` | unit tests
-`manifest.json` | extension manifest
 
 #### Requirements
 
 To build and run this program locally you will need the following:
 
 -   Node.js
--   [yarn](https://yarnpkg.com/en/) (_optional_), if you prefer this over npm
+-   [yarn](https://yarnpkg.com/en/) (_optional_)
 -   Web IDE of your choice
 -   Chrome browser
 
-#### Build Instructions
+### Build Instructions / Basic Usage
 
 1) Clone the repo 
-2) If you have yarn installed, install dependecies by running
-    ```
-    yarn
-    ``` 
-    or, to install dependecies using npm, run `npm install`
+```
+https://github.com/sneeakco/sitemap-generator.git
+```
+2) Install dependecies by running  `yarn` or `npm install`
 
-3) Build the extension 
-    ```
-    gulp
-    ```   
-#### List of CLI options
+3) Build the extension `yarn dev` or `npm run dev`
+  
+#### Full List of CLI options
 
 command | details
 ------- | -------
-`gulp` | run build and continue to watch file changes
-`gulp build` |  run dev build then exit
-`gulp build --prod` | run prod build then exit
-`gulp build --bump=step` | run build and increment version, where step is `major`, `minor` or `patch`   
-`yarn test` | run unit tests once then exit
-`yarn test:watch` |  run unit tests and continue to watch changes
-`gulp release` | generate release package (.zip)
+`dev` | run dev build and continue watching changes
+`test` | run unit tests then exit
+`test:watch` | run unit tests and continue watching changes
+`test:coverage` | run unit tests and get coverage stats 
+`build` | run production build and tests
+`build:patch` | build w/ patch version increment  
+`build:minor` | build w/ minor version increment  
+`build:major` | build w/ major version increment   
 
 #### Debug Instructions
 
 Using Chrome browser:
 
 1) Go to `chrome://extensions`. Make sure you have developer mode enabled.
+
 2) Click `Load unpacked extension...`
+
 3) Choose the `dist/` directory.
 
 
