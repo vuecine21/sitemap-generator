@@ -27,6 +27,17 @@ export default class backgroundApi {
         let appPath = tab.url.indexOf('http') === 0 ? tab.url : '',
             setupPage = window.chrome.extension.getURL('setup.html');
 
+        appPath = backgroundApi.removePageFromUrl(appPath);
+        return CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
+    }
+
+    /**
+     * @ignore
+     * @description if url ends with page e.g. "index.html" we want to remove
+     * this and just keep the application path
+     * @param {String} appPath - url 
+     */
+    static removePageFromUrl(appPath) {
         if (appPath.indexOf('/') > 0) {
             let parts = appPath.split('/'),
                 last = parts[parts.length - 1];
@@ -37,8 +48,7 @@ export default class backgroundApi {
             }
             appPath = parts.join('/');
         }
-
-        return CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
+        return appPath;
     }
 
     /**
