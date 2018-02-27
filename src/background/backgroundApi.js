@@ -27,18 +27,17 @@ export default class backgroundApi {
      * @param {function} sendResponse - when sender expects a response, this value should be the callback function
      */
     static backgroundApi(request, sender, sendResponse) {
-        if (generator) {
-            if (request.terminate) {
-                generator.terminate();
-            } else if (request.noindex) {
-                generator.noindex(request.noindex);
-            } else if (request.urls) {
-                generator.urlMessage(request.urls, sender);
-            } else if (request.status) {
-                sendResponse(generator.status());
-            }
-        } else if (request.start) {
-            backgroundApi.launchGenerator(request.start, sender);
+        if (!generator) {
+            return request.start &&
+                backgroundApi.launchGenerator(request.start, sender);
+        } else if (request.terminate) {
+            generator.terminate();
+        } else if (request.noindex) {
+            generator.noindex(request.noindex);
+        } else if (request.urls) {
+            generator.urlMessage(request.urls, sender);
+        } else if (request.status) {
+            sendResponse(generator.status());
         }
         return false;
     }
