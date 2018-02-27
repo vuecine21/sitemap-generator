@@ -35,7 +35,6 @@
     -   [Process](#process)
         -   [checkStatus](#checkstatus)
 -   [Crawler](#crawler)
-    -   [appendCodeFragment](#appendcodefragment)
     -   [getRobotsMeta](#getrobotsmeta)
     -   [findLinks](#findlinks)
 
@@ -304,14 +303,6 @@ Request information about current processing status from the background
 then update the UI to reflect current status.
 
 ## Crawler
-
-### appendCodeFragment
-
-Append some js code fragment in current document DOM
-
-**Parameters**
-
--   `jsCodeFragment` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the code you want to execute in the document context
 
 ### getRobotsMeta
 

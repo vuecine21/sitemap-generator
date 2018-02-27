@@ -85,6 +85,7 @@ export default class Setup {
         siteUrlInput.classList[classAction]('is-invalid');
         return result;
     }
+
 }
 
 (() => new Setup())();

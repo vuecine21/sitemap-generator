@@ -34,6 +34,7 @@ export default class Crawler {
     }
 
     /**
+     * @ignore
      * @description Append some js code fragment in current document DOM
      * @param {String} jsCodeFragment - the code you want to execute in the document context
      */
@@ -45,26 +46,6 @@ export default class Crawler {
             e.textContent = content;
             document.getElementsByTagName(domElem)[0].append(e);
         }('body', 'script', 'text/javascript', jsCodeFragment));
-    }
-
-    /*
-    * @ignore
-    * @description given an anchro tag, return its href in abs format
-    * @param anchorTag
-    */
-    static getAbsoluteHref(anchorTag) {
-        let href = anchorTag.getAttribute('href');
-
-        if (href.indexOf('http') < 0) {
-            href = (function absolutePath(href) {
-                let link = document.createElement('a');
-
-                link.href = href;
-                return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
-            }());
-        }
-
-        return href;
     }
 
     /**
@@ -98,6 +79,27 @@ export default class Crawler {
             window.chrome.runtime.sendMessage({urls: Object.keys(result)});
         }
     }
+
+    /*
+    * @ignore
+    * @description given an anchro tag, return its href in abs format
+    * @param anchorTag
+    */
+    static getAbsoluteHref(anchorTag) {
+        let href = anchorTag.getAttribute('href');
+
+        if (href.indexOf('http') < 0) {
+            href = (function absolutePath(href) {
+                let link = document.createElement('a');
+
+                link.href = href;
+                return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
+            }());
+        }
+
+        return href;
+    }
+
 }
 
 (() => new Crawler())();

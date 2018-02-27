@@ -14,29 +14,31 @@ export default class backgroundApi {
     }
 
     /**
-    * @description use this api to pass messages within the extension.
-    * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
-    * @param request - message parameters
-    * @param request.start - starts generator
-    * @param request.terminate - stops generator
-    * @param request.status - gets current processing status
-    * @param request.urls - receive list of urls from crawler
-    * @param request.noindex - tells generator not to index some url, see
-    * @param {Object }sender -
-    * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
-    * @param {function} sendResponse - when sender expects a response, this value should be the callback function
-    */
+     * @description use this api to pass messages within the extension.
+     * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
+     * @param request - message parameters
+     * @param request.start - starts generator
+     * @param request.terminate - stops generator
+     * @param request.status - gets current processing status
+     * @param request.urls - receive list of urls from crawler
+     * @param request.noindex - tells generator not to index some url, see
+     * @param {Object }sender -
+     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     * @param {function} sendResponse - when sender expects a response, this value should be the callback function
+     */
     static backgroundApi(request, sender, sendResponse) {
-        if (request.start) {
-            return backgroundApi.launchGenerator(request.start, sender);
-        } else if (request.terminate) {
-            if (generator) generator.terminate();
-        } else if (request.noindex) {
-            if (generator) generator.noindex(request.noindex);
-        } else if (request.urls) {
-            if (generator) generator.urlMessage(request.urls, sender);
-        } else if (request.status) {
-            return sendResponse((generator || {}).status());
+        if (generator) {
+            if (request.terminate) {
+                generator.terminate();
+            } else if (request.noindex) {
+                generator.noindex(request.noindex);
+            } else if (request.urls) {
+                generator.urlMessage(request.urls, sender);
+            } else if (request.status) {
+                sendResponse(generator.status());
+            }
+        } else if (request.start) {
+            backgroundApi.launchGenerator(request.start, sender);
         }
         return false;
     }
