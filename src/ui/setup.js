@@ -72,18 +72,18 @@ export default class Setup {
             url = (siteUrlInput.value || '').trim(),
             message = '';
 
-        if (!url || url.trim().length < 1) {
+        if (url.length < 1) {
             message = 'Url value is required';
-        } else if (url.indexOf('http://') !== 0 && url.indexOf('https://') !== 0) {
+        } else if (url.split('/').shift().indexOf('http') !== 0) {
             message = 'Url must start with http:// or https://';
         }
         let error = message.length,
-            classAction = error ? 'remove' : 'add';
+            classAction = error ? 'remove' : 'add',
+            result = {url: url, error: error};
 
         siteUrlInputError.innerText = message;
         siteUrlInput.classList[classAction]('is-invalid');
-
-        return {url: url, error: error};
+        return result;
     }
 }
 
