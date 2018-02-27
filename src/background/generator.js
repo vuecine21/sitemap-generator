@@ -65,6 +65,14 @@ export default class Generator {
             errorHeaders: [],
             successUrls: []
         };
+        this.generatorApi = this.generatorApi.bind(this);
+        this.onComplete = this.onComplete.bind(this);
+        this.navigateToNext = this.navigateToNext.bind(this);
+        this.processDiscoveredUrls = this.processDiscoveredUrls.bind(this);
+        this.onHeadersReceivedHandler = this.onHeadersReceivedHandler.bind(this);
+        this.onBeforeRedirect = this.onBeforeRedirect.bind(this);
+        this.onTabLoadListener = this.onTabLoadListener.bind(this);
+        this.onTabErrorHandler = this.onTabErrorHandler.bind(this);
     }
 
     /**
@@ -80,16 +88,15 @@ export default class Generator {
      */
     generatorApi(request, sender, sendResponse) {
         if (request.terminate) {
-            return this.onComplete();
-        }
-        if (request.noindex) {
-            return this.noindex(request.noindex);
-        }
-        if (request.urls) {
-            return this.urlMessage(request.urls, sender);
-        }
-        if (request.status) {
+            this.onComplete();
+        } else if (request.noindex) {
+            this.noindex(request.noindex);
+        } else if (request.urls) {
+            this.urlMessage(request.urls, sender);
+        } else if (request.status) {
             return sendResponse(this.status());
+        } else if (request.url) {
+            return sendResponse(url);
         }
         return false;
     }
@@ -147,8 +154,7 @@ export default class Generator {
      * then close tab that sent the message
      */
     urlMessage(urls, sender) {
-
-        GeneratorUtils.processDiscoveredUrls(urls, lists);
+        this.processDiscoveredUrls(urls);
         return !sender || !sender.tab ||
             window.chrome.tabs.remove(sender.tab.id);
     }
@@ -188,7 +194,7 @@ export default class Generator {
                         onCompleteCallback();
                     }
                     window.chrome.windows.remove(targetRenderer,
-                        () => GeneratorUtils.makeSitemap(lists.successUrls));
+                        () => GeneratorUtils.makeSitemap(url, lists.successUrls));
                 }, 1000);
             });
         }());
@@ -201,11 +207,13 @@ export default class Generator {
     navigateToNext() {
 
         if (terminating) {
-            return false;
+            return;
         }
-        let that = this;
+        let oncComplete = this.onComplete,
+            next = this.navigateToNext;
 
-        return window.chrome.tabs.query({
+        console.log('queue len:', lists.processQueue.length);
+        window.chrome.tabs.query({
             windowId: targetRenderer,
             url: requestDomain
         }, function (tabs) {
@@ -216,29 +224,32 @@ export default class Generator {
             if (openTabsCount === 0 &&
                 lists.processQueue.length === 0 &&
                 lists.completedUrls.length >= 1) {
-                return that.onComplete();
+                oncComplete();
+                return;
             }
 
             if (openTabsCount > maxTabCount ||
                 lists.processQueue.length === 0) {
-                return false;
+                return;
             }
 
             let nextUrl = lists.processQueue.shift();
 
             // double check that we are not trying to open previously checked urls
             if (lists.completedUrls.indexOf(nextUrl) >= 0) {
-                return that.navigateToNext();
+                next();
+                return;
             }
 
             GeneratorUtils.listAdd(nextUrl, lists.completedUrls);
-            return window.chrome.tabs.create({
+            window.chrome.tabs.create({
                 url: nextUrl,
                 windowId: targetRenderer,
                 active: false
-            }, () => {
-                return (!window.chrome.runtime.lastError) ||
-                    that.terminate();
+            }, function () {
+                if (window.chrome.runtime.lastError) {
+                    oncComplete();
+                }
             });
         });
     }
@@ -250,6 +261,7 @@ export default class Generator {
      * @param {Array<String>} urls - the urls to process
      */
     processDiscoveredUrls(urls) {
+        console.log('urls', urls);
 
         (urls || []).map((u) => {
 
@@ -290,7 +302,7 @@ export default class Generator {
                     }).length > 0;
                 }
             }
-
+            console.log(u.indexOf(url) === 0, u);
             // filter down to new urls in target domain
             return u.indexOf(url) === 0 &&
                 (lists.completedUrls.indexOf(u) < 0) &&
@@ -309,14 +321,23 @@ export default class Generator {
      * @param {boolean} add - true to add, false to remove
      */
     listeners(add) {
-        GeneratorUtils.listeners((add ? 'add' : 'remove') + 'Listener',
-            requestDomain, {
-                onMessage: this.generatorApi,
-                onHeadersReceivedHandler: this.onHeadersReceivedHandler,
-                onBeforeRedirect: this.onBeforeRedirect,
-                onTabLoadListener: this.onTabLoadListener,
-                onTabErrorHandler: this.onTabErrorHandler
-            });
+
+        let action = add ? 'addListener' : 'removeListener';
+
+        console.log('modifying listeners:', action);
+        window.chrome.runtime.onMessage[action](this.generatorApi);
+
+        window.chrome.webRequest.onHeadersReceived[action](this.onHeadersReceivedHandler,
+            { urls: [requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+
+        window.chrome.webRequest.onBeforeRedirect[action](this.onBeforeRedirect,
+            { urls: [requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+
+        window.chrome.webRequest.onCompleted[action](this.onTabLoadListener,
+            { urls: [requestDomain], types: ['main_frame'] }, ['responseHeaders']);
+
+        window.chrome.webRequest.onErrorOccurred[action](this.onTabErrorHandler,
+            { urls: [requestDomain], types: ['main_frame'] });
     }
 
     /**
@@ -328,28 +349,31 @@ export default class Generator {
      * @see {@link https://developer.chrome.com/extensions/webRequest#event-onHeadersReceived | onHeadersReceived}
      */
     onHeadersReceivedHandler(details) {
-        if (!details.responseHeaders) {
-            return details;
-        }
 
-        let headers = details.responseHeaders,
-            tabId = details.tabId,
-            validType = false;
+        let cancel = false;
 
-        for (let i = 0; i < headers.length; ++i) {
-            if (headers[i].name.toLowerCase() === 'content-type') {
-                validType = (contenttypePatterns
-                    .indexOf(headers[i].value.split(';')[0]
-                        .trim().toLowerCase()) > -1);
-                break;
+        if (details.responseHeaders) {
+
+            let headers = details.responseHeaders,
+                tabId = details.tabId,
+                validType = false;
+
+            for (let i = 0; i < headers.length; ++i) {
+                if (headers[i].name.toLowerCase() === 'content-type') {
+                    validType = (contenttypePatterns
+                        .indexOf(headers[i].value.split(';')[0]
+                            .trim().toLowerCase()) > -1);
+                    break;
+                }
+            }
+
+            if (!validType || terminating) {
+                window.chrome.tabs.remove(tabId);
+                cancel = true;
             }
         }
 
-        if (!validType || terminating) {
-            window.chrome.tabs.remove(tabId);
-            return { cancel: true };
-        }
-        return details;
+        return { cancel: cancel };
     }
 
     /**
@@ -359,7 +383,6 @@ export default class Generator {
      * @see {@link https://developer.chrome.com/extensions/webRequest#event-onCompleted | OnComplete}
      */
     onTabLoadListener(details) {
-
         if (!details.responseHeaders) {
             return;
         }
@@ -377,7 +400,7 @@ export default class Generator {
             }
         }
         GeneratorUtils.listAdd(details.url, lists.successUrls);
-        GeneratorUtils.loadContentScript(details.tabId, () => this.terminate);
+        GeneratorUtils.loadContentScript(details.tabId, () => { if (this) this.onComplete(); });
     }
 
     /**

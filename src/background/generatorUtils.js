@@ -6,37 +6,6 @@ const downloadsPage = 'chrome://downloads';
 export default class GeneratorUtils {
 
     /**
-     * @description add or remove listeners to track request outcome
-     *
-     * - onHeadersReceived is used to detect correct content type and status code
-     *   -> when these are incorrect we can terminate the request immediately
-     *
-     * - onBeforeRedirect is used to detect redirection headers
-     *
-     * - onCompleted when tab is ready for client side crawling
-     *
-     * - onErrorOccurred when there is a problem with tab and we can close
-     * @param {String} action - `addListener` or `removeListener`
-     * @param {Object} handlers - event handlers dictionary
-     * @param {String} requestDomain - chrome url pattern for matching requests
-      */
-    static listeners(action, requestDomain, handlers) {
-        window.chrome.runtime.onMessage[action](handlers.onMessage);
-
-        window.chrome.webRequest.onHeadersReceived[action](handlers.onHeadersReceivedHandler,
-            { urls: [requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
-
-        window.chrome.webRequest.onBeforeRedirect[action](handlers.onBeforeRedirect,
-            { urls: [requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-
-        window.chrome.webRequest.onCompleted[action](handlers.onTabLoadListener,
-            { urls: [requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-
-        window.chrome.webRequest.onErrorOccurred[action](handlers.onTabErrorHandler,
-            { urls: [requestDomain], types: ['main_frame'] });
-    }
-
-    /**
      * @description move url to a specific processing queue
      */
     static listAdd(url, list) {
@@ -75,7 +44,7 @@ export default class GeneratorUtils {
      * @description this function creates the sitemap and downloads it,
      * then opens or activates downloads tab
      */
-    static makeSitemap(successUrls) {
+    static makeSitemap(url, successUrls) {
 
         if (!successUrls || !successUrls.length) {
             return;
@@ -98,7 +67,7 @@ export default class GeneratorUtils {
             .join('');
 
         let lastmod = Date.now(),
-            fnameUrl = this.url.replace(/[\/:.]/g, '_'),
+            fnameUrl = url.replace(/[\/:.]/g, '_'),
             filename = fnameUrl + '_sitemap_' + lastmod + '.xml';
 
         GeneratorUtils.download(filename, sitemap);

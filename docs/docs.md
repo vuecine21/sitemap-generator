@@ -17,7 +17,6 @@
         -   [noindex](#noindex)
         -   [urlMessage](#urlmessage)
     -   [GeneratorUtils](#generatorutils)
-        -   [listeners](#listeners)
         -   [listAdd](#listadd)
         -   [download](#download)
         -   [makeSitemap](#makesitemap)
@@ -175,25 +174,6 @@ then close tab that sent the message
 
 ### GeneratorUtils
 
-#### listeners
-
-add or remove listeners to track request outcome
-
--   onHeadersReceived is used to detect correct content type and status code
-    \-> when these are incorrect we can terminate the request immediately
-
--   onBeforeRedirect is used to detect redirection headers
-
--   onCompleted when tab is ready for client side crawling
-
--   onErrorOccurred when there is a problem with tab and we can close
-
-**Parameters**
-
--   `action` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** `addListener` or `removeListener`
--   `requestDomain` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** chrome url pattern for matching requests
--   `handlers` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** event handlers dictionary
-
 #### listAdd
 
 move url to a specific processing queue
@@ -219,6 +199,7 @@ then opens or activates downloads tab
 
 **Parameters**
 
+-   `url`  
 -   `successUrls`  
 
 #### loadContentScript
