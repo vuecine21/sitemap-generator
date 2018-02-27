@@ -47,6 +47,26 @@ export default class Crawler {
         }('body', 'script', 'text/javascript', jsCodeFragment));
     }
 
+    /*
+    * @ignore
+    * @description given an anchro tag, return its href in abs format
+    * @param anchorTag
+    */
+    static getAbsoluteHref(anchorTag) {
+        let href = anchorTag.getAttribute('href');
+
+        if (href.indexOf('http') < 0) {
+            href = (function absolutePath(href) {
+                let link = document.createElement('a');
+
+                link.href = href;
+                return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
+            }());
+        }
+
+        return href;
+    }
+
     /**
      * @description Look for 'robots' meta tag in the page header and if found return its contents
      */
@@ -66,33 +86,17 @@ export default class Crawler {
      */
     static findLinks() {
 
-        if (hasFired) {
-            return;
+        if (!hasFired) {
+
+            hasFired = true;
+
+            let result = {};
+
+            [].forEach.call(document.querySelectorAll('a[href]'), (link) => {
+                result[Crawler.getAbsoluteHref(link)] = 1;
+            });
+            window.chrome.runtime.sendMessage({urls: Object.keys(result)});
         }
-
-        hasFired = true;
-
-        let result = {}, links = document.querySelectorAll('a[href]');
-
-        if (links.length) {
-            for (let n = 0; n < links.length; n++) {
-                let href = links[n].getAttribute('href');
-
-                if (href.indexOf('http') < 0) {
-                    href = (function absolutePath(href) {
-                        let link = document.createElement('a');
-
-                        link.href = href;
-                        return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
-                    }());
-                }
-                result[href] = 1;
-            }
-        }
-
-        let uniqueUrls = Object.keys(result);
-
-        window.chrome.runtime.sendMessage({urls: uniqueUrls});
     }
 }
 
