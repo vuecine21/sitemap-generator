@@ -1,6 +1,6 @@
-node_modules/
-dist/
 .idea/
-releases/
-coverage/
-.nyc_output/
+releases/ 
+node_modules/
+dist/ 
+.nyc_output
+coverage/  
