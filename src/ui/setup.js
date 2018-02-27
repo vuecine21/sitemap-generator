@@ -11,7 +11,7 @@ export default class Setup {
             startButton = document.getElementById('start');
 
         // the initial url will be active tab url if available
-        siteUrlInput.value = ((siteUrl || '').indexOf('http') === 0) ? siteUrl : '';
+        siteUrlInput.value = siteUrl;
         startButton.onclick = Setup.onStartButtonClick;
     }
 
@@ -56,7 +56,7 @@ export default class Setup {
                 maxTabCount: 25
             };
 
-        window.chrome.runtime.sendMessage({start: config});
+        window.chrome.runtime.sendMessage({ start: config });
         e.target.innerText = 'Starting....';
         document.getElementById('start').onclick = false;
     }
@@ -78,11 +78,15 @@ export default class Setup {
             message = 'Url must start with http:// or https://';
         }
         let error = message.length,
-            classAction = error ? 'remove' : 'add',
-            result = {url: url, error: error};
+            className = 'is-invalid',
+            result = { url: url, error: error };
 
         siteUrlInputError.innerText = message;
-        siteUrlInput.classList[classAction]('is-invalid');
+        if (error) {
+            siteUrlInput.className += ' ' + className;
+        } else {
+            siteUrlInput.classList.remove(className);
+        }
         return result;
     }
 

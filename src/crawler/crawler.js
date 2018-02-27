@@ -1,4 +1,4 @@
-let hasFired;
+let hasFired, baseUrl;
 
 /**
  * @namespace
@@ -6,6 +6,9 @@ let hasFired;
 export default class Crawler {
 
     constructor() {
+
+        // get the target url
+        Crawler.getBaseUrl();
 
         hasFired = false;
 
@@ -18,12 +21,12 @@ export default class Crawler {
 
         // remove this url from sitemap if noindex is set
         if (robots.indexOf('noindex') >= 0) {
-            window.chrome.runtime.sendMessage({noindex: window.location.href});
+            window.chrome.runtime.sendMessage({ noindex: window.location.href });
         }
 
         // don't follow links on this page if no follow is set
         if (robots.indexOf('nofollow') >= 0) {
-            return window.chrome.runtime.sendMessage({urls: []});
+            return window.chrome.runtime.sendMessage({ urls: [] });
         }
 
         // wait for onload
@@ -63,43 +66,57 @@ export default class Crawler {
     }
 
     /**
+     * @description request the app path that is being crawled
+     * so we can narrow down the matches in the front end
+     */
+    static getBaseUrl(callback) {
+        window.chrome.runtime.sendMessage({ crawlUrl: true }, function (url) {
+            baseUrl = encodeURI(url);
+            if (callback) {
+                callback();
+            }
+        });
+    }
+
+    /**
      * @description Looks for links on the page, then send a message with findings to background page
      */
     static findLinks() {
-
         if (!hasFired) {
-
             hasFired = true;
 
-            let result = {};
+            let result = {}, message = [];
 
             [].forEach.call(document.querySelectorAll('a[href]'), (link) => {
                 result[Crawler.getAbsoluteHref(link)] = 1;
             });
-            window.chrome.runtime.sendMessage({urls: Object.keys(result)});
+            Object.keys(result).map(function (u) {
+                if (u.indexOf(baseUrl) === 0) {
+                    message.push(u);
+                }
+            });
+
+            window.chrome.runtime.sendMessage({ urls: message });
         }
     }
 
     /*
-    * @ignore
-    * @description given an anchro tag, return its href in abs format
-    * @param anchorTag
-    */
+     * @ignore
+     * @description given an anchro tag, return its href in abs format
+     * @param anchorTag
+     */
     static getAbsoluteHref(anchorTag) {
         let href = anchorTag.getAttribute('href');
 
         if (href.indexOf('http') < 0) {
-            href = (function absolutePath(href) {
-                let link = document.createElement('a');
+            let link = document.createElement('a');
 
-                link.href = href;
-                return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
-            }());
+            link.href = href;
+            href = (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
         }
-
-        return href;
+        console.log(href);
+        return encodeURI(href);
     }
-
 }
 
 (() => new Crawler())();

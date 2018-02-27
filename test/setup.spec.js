@@ -18,12 +18,13 @@ describe('Setup Page', () => {
         chrome.flush();
     });
     it('initializes without error', () => {
-        expect(() => {
-            new Setup()
-        }).to.not.throw();
+        expect(() => { new Setup() }).to.not.throw();
     });
     it('getParameterByName returns value if it exists', () => {
         expect(Setup.getParameterByName('id', 't.com?id=5')).to.equal('5');
+    });
+    it('getParameterByName returns empty if querystring param has no value', () => {
+        expect(Setup.getParameterByName('id', 't.com?id=')).to.be.empty;
     });
     it('click handler does not send message if url is not set', () => {
         expect(window.chrome.runtime.sendMessage.notCalled).to.be.true;

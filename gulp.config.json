@@ -23,5 +23,5 @@
   "background": "./src/background/**/*.js",
   "content": "./src/crawler/**/*.js",
   "setup": "./src/ui/setup.js",
-  "processing": "./src/ui/processing.js"
+  "process": "./src/ui/process.js"
 }

@@ -10,19 +10,15 @@ describe('Process Page', () => {
     before(() => {
         window.chrome = chrome;
         document.documentElement.innerHTML = require('fs')
-            .readFileSync('./src/processing.html', 'utf8');
-        global.setTimeout = () => {};
-        global.setInterval = () => {};
+            .readFileSync('./src/process.html', 'utf8');
+        global.setTimeout = () => { };
+        global.setInterval = () => { };
         Process = require('../src/ui/process.js');
     });
     beforeEach(function () {
         chrome.flush();
     });
-    it('initializes without error', () => {
-        expect(() => {new Process()}).to.not.throw();
-    });
     it('close button sends message to terminate processing', () => {
-        (() => new Process())();
         expect(window.chrome.runtime.sendMessage.notCalled).to.be.true;
         document.getElementById('close').click();
         expect(window.chrome.runtime.sendMessage.notCalled).to.be.false;
@@ -31,5 +27,12 @@ describe('Process Page', () => {
         expect(window.chrome.runtime.sendMessage.notCalled).to.be.true;
         Process.checkStatus();
         expect(window.chrome.runtime.sendMessage.notCalled).to.be.false;
+    });
+    it('status response updates ui', () => {
+        document.documentElement.innerHTML = "<div id='me'></div>";
+        let value = 10, uifield = document.getElementById('me');
+
+        Process.handleStatusResponse({ me: value, too: value + 1 });
+        expect(uifield.innerText.toString()).to.have.string(value.toString())
     });
 });
