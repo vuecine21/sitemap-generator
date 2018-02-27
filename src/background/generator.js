@@ -1,4 +1,17 @@
 import CenteredPopup from './centeredPopup.js';
+import GeneratorUtils from './generatorUtils.js';
+
+let url,
+    requestDomain,
+    onCompleteCallback,
+    contenttypePatterns,
+    excludeExtension,
+    successCodes,
+    maxTabCount,
+    terminating,
+    targetRenderer,
+    progressInterval,
+    lists;
 
 /**
  * @namespace
@@ -37,18 +50,16 @@ import CenteredPopup from './centeredPopup.js';
 export default class Generator {
 
     constructor(config) {
-        this.clientSideJs = 'content.js';
-        this.url = config.url;
-        this.requestDomain = config.requestDomain;
-        this.onCompleteCallback = config.callback;
-        this.contenttypePatterns = config.contenttypePatterns || [];
-        this.excludeExtension = config.excludeExtension || [];
-        this.successCodes = config.successCodes || [];
-        this.maxTabCount = Math.max(1, config.maxTabCount);
-        this.terminating = false;
-        this.targetRenderer = null;
-        this.progressInterval = null;
-        this.lists = {
+        url = config.url;
+        requestDomain = config.requestDomain;
+        onCompleteCallback = config.callback;
+        contenttypePatterns = config.contenttypePatterns || [];
+        excludeExtension = config.excludeExtension || [];
+        successCodes = config.successCodes || [];
+        maxTabCount = Math.max(1, config.maxTabCount);
+        terminating = false;
+        progressInterval = null;
+        lists = {
             processQueue: [],
             completedUrls: [],
             errorHeaders: [],
@@ -57,172 +68,112 @@ export default class Generator {
     }
 
     /**
-     * @description use this api to pass messages within the extension.
+     * @description Listen to messages from the browser tabs
      * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
      * @param request - message parameters
      * @param request.terminate - stops generator
      * @param request.status - gets current processing status
      * @param request.urls - receive list of urls from crawler
      * @param request.noindex - tells generator not to index some url, see
-     * @param {Object }sender -
-     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     * @param {Object} sender -  message sender
+     * @param {function?} sendResponse - callback function
      */
     generatorApi(request, sender, sendResponse) {
         if (request.terminate) {
-            this.terminate();
-        } else if (request.noindex) {
-            this.noindex(request.noindex);
-        } else if (request.urls) {
-            this.urlMessage(request.urls, sender);
-        } else if (request.status) {
-            sendResponse(this.status());
+            return this.onComplete();
+        }
+        if (request.noindex) {
+            return this.noindex(request.noindex);
+        }
+        if (request.urls) {
+            return this.urlMessage(request.urls, sender);
+        }
+        if (request.status) {
+            return sendResponse(this.status());
         }
         return false;
     }
+
     /**
      * @description Initiates crawling of some website
      */
     start() {
-        let launchPage = window.chrome.extension.getURL('process.html');
+        const launchPage = window.chrome.extension.getURL('process.html');
 
         CenteredPopup.open(800, 800, launchPage, 'normal', true)
             .then((window) => {
-                // this.targetRenderer = window.id;
-                // // 1. register webRequest listener where we listen to successful http request events;
-                // this.addListeners();
-                // // 2. add the first url to processing queue
-                // this.listAdd(this.url, this.lists.processQueue);
-                // // 3. navigate to first url
-                // this.navigateToNext();
-                // // 4. start interval that progressively works through the queue
-                // this.progressInterval = setInterval(this.navigateToNext, 500);
+                targetRenderer = window.id;
+                // 1. add the first url to processing queue
+                GeneratorUtils.listAdd(url, lists.processQueue);
+                // 2. register webRequest listener where we listen to successful http request events;
+                this.listeners(true);
+                // 3. navigate to first url
+                this.navigateToNext();
+                // 4. start interval that progressively works through the queue
+                progressInterval = setInterval(this.navigateToNext, 500);
             });
     }
-    /**
-     * @description Terminates sitemap generator before it completes naturally
-     */
-    terminate() {
-        if (!this.terminating) {
-            this.onComplete();
-        }
-    }
+
     /**
      * @description Get stats about ongoing processing status
      */
     status() {
         return {
-            url: this.url,
-            queue: this.lists.processQueue.length,
-            completed: this.lists.completedUrls.length,
-            success: this.lists.successUrls.length,
-            error: this.lists.errorHeaders.length
+            url: url,
+            queue: lists.processQueue.length,
+            completed: lists.completedUrls.length,
+            success: lists.successUrls.length,
+            error: lists.errorHeaders.length
         };
     }
+
     /**
-     * @description Tell generator not to include specific url in the sitemap
+     * @description Exclude discovered url from sitemap
      * @param {String} url - the url that should not be included in the sitemap
      */
     noindex(url) {
         url = encodeURI(url);
-        this.listAdd(url, this.lists.completedUrls);
+        GeneratorUtils.listAdd(url, lists.completedUrls);
 
-        let successIndex = this.lists.successUrls.indexOf(url);
+        let successIndex = lists.successUrls.indexOf(url);
 
         if (successIndex >= 0) {
-            this.lists.successUrls.splice(successIndex);
+            lists.successUrls.splice(successIndex);
         }
     }
+
     /**
-     * @description Listen to messages sent from content script back to the generator instance
+     * @description When url message is received, process urls,
+     * then close tab that sent the message
      */
     urlMessage(urls, sender) {
 
-        this.processDiscoveredUrls(urls);
-
-        if (sender && sender.tab) {
+        GeneratorUtils.processDiscoveredUrls(urls, lists);
+        return !sender || !sender.tab ||
             window.chrome.tabs.remove(sender.tab.id);
-        }
     }
 
-    // ////////////////////////
+    // /////////////////////
 
     /**
-     * @description Download file
-     * @param {String} filename
-     * @param {String} text
-     */
-    static download(filename, text) {
-        let element = document.createElement('a'),
-            downloadsPage = 'chrome://downloads';
-
-        element.setAttribute('href',
-            'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-
-        window.chrome.tabs.query({ url: downloadsPage + '/*' },
-            function (result) {
-                if (result && result.length) {
-                    window.chrome.tabs.reload(result[0].id, null, function () {
-                        window.chrome.tabs.update(result[0].id, { active: true });
-                    });
-                } else {
-                    window.chrome.tabs.create(
-                        { url: downloadsPage, active: true });
-                }
-            });
-    }
-
-    /**
-     * @description this function creates the sitemap and downloads it,
-     * then opens or activates downloads tab
-     */
-    makeSitemap() {
-
-        // let windowCloseError = window.chrome.runtime.lastError; // ignore
-
-        if (!this.lists.successUrls.length) {
-            return;
-        }
-
-        // for (var list in lists)
-        //     console.log(list + '\r\n' + lists[list].join('\r\n'));
-
-        let now = new Date(),
-            lastmod = now.getFullYear() + '-' +
-                (now.getMonth() + 1) + '-' + now.getDate();
-
-        let entries = this.lists.successUrls.sort()
-            .map(function (u) {
-                return '<url><loc>' + encodeURI(u) + '</loc></url>';
-            }),
-            sitemap = [
-                '<?xml version=\'1.0\' encoding=\'UTF-8\'?>',
-                '<urlset xmlns=\'http://www.sitemaps.org/schemas/sitemap/0.9\'>\r\n',
-                entries.join('\r\n'), '</urlset>'].join(''),
-            filename = this.url.replace(/[\/:.]/g, '_');
-
-        Generator.download(filename + '_sitemap_' + lastmod + '.xml', sitemap);
-    }
-
-    /**
+     * @ignore
      * @description execute everytime when processing is done,
      * independed of why processing ended
      */
     onComplete() {
 
-        if (this.terminating) return;
+        if (terminating) {
+            return;
+        }
 
-        this.terminating = true;
-        clearInterval(this.progressInterval);
-        let that = this;
+        terminating = true;
+        clearInterval(progressInterval);
+        let removeListeners = () => this.listeners(false);
 
         (function closeRenderer() {
             window.chrome.tabs.query({
-                windowId: that.targetRenderer,
-                url: that.requestDomain
+                windowId: targetRenderer,
+                url: requestDomain
             }, function (result) {
                 if (result.length > 0) {
                     for (let i = 0; i < result.length; i++) {
@@ -231,113 +182,145 @@ export default class Generator {
                     setTimeout(closeRenderer, 250);
                     return;
                 }
-                setTimeout(function () {
-                    that.removeListeners();
-                    if (that.onCompleteCallback) {
-                        that.onCompleteCallback();
+                setTimeout(() => {
+                    removeListeners();
+                    if (onCompleteCallback) {
+                        onCompleteCallback();
                     }
-                    window.chrome.windows.remove(
-                        that.targetRenderer, that.makeSitemap);
+                    window.chrome.windows.remove(targetRenderer,
+                        () => GeneratorUtils.makeSitemap(lists.successUrls));
                 }, 1000);
             });
         }());
     }
 
     /**
-     * @description move url to a specific processing queue
-     */
-    listAdd(url, list) {
-        if (list.indexOf(url) < 0) list.push(url);
-    };
-
-    /**
-     * @description add listeners to track request outcome
-     *
-     * - onHeadersReceived is used to detect correct content type and status code
-     *   -> when these are incorrect we can terminate the request immediately
-     *
-     * - onBeforeRedirect is used to detect redirection headers
-     *
-     * - onCompleted when tab is ready for client side crawling
-     *
-     * - onErrorOccurred when there is a problem with tab and we can close
-     */
-    addListeners() {
-        window.chrome.runtime.onMessage.addListener(this.generatorApi);
-        window.chrome.webRequest.onHeadersReceived.addListener(this.onHeadersReceivedHandler,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
-        window.chrome.webRequest.onBeforeRedirect.addListener(this.onBeforeRedirect,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-        window.chrome.webRequest.onCompleted.addListener(this.onTabLoadListener,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-        window.chrome.webRequest.onErrorOccurred.addListener(this.onTabErrorHandler,
-            { urls: [this.requestDomain], types: ['main_frame'] });
-    }
-
-    /**
-     * @description when processing is done remove all event listeners
-     */
-    removeListeners() {
-        window.chrome.runtime.onMessage.removeListener(this.generatorApi);
-        window.chrome.webRequest.onHeadersReceived.removeListener(this.onHeadersReceivedHandler,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
-        window.chrome.webRequest.onBeforeRedirect.removeListener(this.onBeforeRedirect,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-        window.chrome.webRequest.onCompleted.removeListener(this.onTabLoadListener,
-            { urls: [this.requestDomain], types: ['main_frame'] }, ['responseHeaders']);
-        window.chrome.webRequest.onErrorOccurred.removeListener(this.onTabErrorHandler,
-            { urls: [this.requestDomain], types: ['main_frame'] });
-    }
-
-    /**
+     * @ignore
      * @description take first queued url and create new tab for that url
      */
     navigateToNext() {
-        if (this.terminating) {
+
+        if (terminating) {
             return false;
         }
+        let that = this;
 
         return window.chrome.tabs.query({
-            windowId: this.targetRenderer,
-            url: this.requestDomain
+            windowId: targetRenderer,
+            url: requestDomain
         }, function (tabs) {
 
             let openTabsCount = (tabs || []).length;
             // console.log(openTabsCount, lists.processQueue.length);
 
             if (openTabsCount === 0 &&
-                this.lists.processQueue.length === 0 &&
-                this.lists.completedUrls.length >= 1) {
-                return this.onComplete();
+                lists.processQueue.length === 0 &&
+                lists.completedUrls.length >= 1) {
+                return that.onComplete();
             }
 
-            if (openTabsCount > this.maxTabCount ||
-                this.lists.processQueue.length === 0) {
+            if (openTabsCount > maxTabCount ||
+                lists.processQueue.length === 0) {
                 return false;
             }
 
-            let nextUrl = this.lists.processQueue.shift();
+            let nextUrl = lists.processQueue.shift();
 
             // double check that we are not trying to open previously checked urls
-            if (this.lists.completedUrls.indexOf(nextUrl) >= 0) {
-                return this.navigateToNext();
+            if (lists.completedUrls.indexOf(nextUrl) >= 0) {
+                return that.navigateToNext();
             }
 
-            this.listAdd(nextUrl, this.lists.completedUrls);
-
+            GeneratorUtils.listAdd(nextUrl, lists.completedUrls);
             return window.chrome.tabs.create({
                 url: nextUrl,
-                windowId: this.targetRenderer,
+                windowId: targetRenderer,
                 active: false
             }, () => {
-                if (window.chrome.runtime.lastError) {
-                    this.terminate();
-                }
+                return (!window.chrome.runtime.lastError) ||
+                    that.terminate();
             });
         });
     }
 
     /**
+     * @ignore
+     * @description when urls are discovered through some means, this function determines
+     * how they should be handled
+     * @param {Array<String>} urls - the urls to process
+     */
+    processDiscoveredUrls(urls) {
+
+        (urls || []).map((u) => {
+
+            // make sure all urls are encoded
+            u = encodeURI(u);
+
+            // if there is successful entry for hashbang path
+            // automatically record save result for the hashbang path
+            if (u.indexOf('#!') > 0) {
+                let page = u.substr(0, u.indexOf('#!'));
+
+                if (lists.successUrls.indexOf(page) > -1) {
+                    GeneratorUtils.listAdd(u, lists.completedUrls);
+                    GeneratorUtils.listAdd(u, lists.successUrls);
+                }
+                if (lists.errorHeaders.indexOf(page) > -1) {
+                    GeneratorUtils.listAdd(u, lists.completedUrls);
+                    GeneratorUtils.listAdd(u, lists.errorHeaders);
+                }
+            } else if (u.indexOf('#') > 0) {
+                u = u.substr(0, u.indexOf('#'));
+            }
+            return u;
+
+        }).filter(function (u) {
+
+            // filter for everything that is clearly not html or text
+            let badFileExtension = false,
+                test = u.replace(url, '');
+
+            if (test.indexOf('/') > -1) {
+                let parts = test.split('/'),
+                    last = parts[parts.length - 1];
+
+                if (last.length) {
+                    badFileExtension = excludeExtension.filter(function (f) {
+                        return (last.indexOf(f) > 0);
+                    }).length > 0;
+                }
+            }
+
+            // filter down to new urls in target domain
+            return u.indexOf(url) === 0 &&
+                (lists.completedUrls.indexOf(u) < 0) &&
+                (lists.processQueue.indexOf(u) < 0) &&
+                !badFileExtension;
+
+        }).map(function (u) {
+            // if url makes it this far add it to queue
+            GeneratorUtils.listAdd(u, lists.processQueue);
+        });
+    }
+
+    /**
+     * @ignore
+     * @description Add or remove runtime event handlers
+     * @param {boolean} add - true to add, false to remove
+     */
+    listeners(add) {
+        GeneratorUtils.listeners((add ? 'add' : 'remove') + 'Listener',
+            requestDomain, {
+                onMessage: this.generatorApi,
+                onHeadersReceivedHandler: this.onHeadersReceivedHandler,
+                onBeforeRedirect: this.onBeforeRedirect,
+                onTabLoadListener: this.onTabLoadListener,
+                onTabErrorHandler: this.onTabErrorHandler
+            });
+    }
+
+    /**
+     * @ignore
      * @description listen to headers to determine type and cancel
      * and close tab immediately if the detected content type is not
      * on the list of target types
@@ -355,14 +338,14 @@ export default class Generator {
 
         for (let i = 0; i < headers.length; ++i) {
             if (headers[i].name.toLowerCase() === 'content-type') {
-                validType = (this.contenttypePatterns
+                validType = (contenttypePatterns
                     .indexOf(headers[i].value.split(';')[0]
                         .trim().toLowerCase()) > -1);
                 break;
             }
         }
 
-        if (!validType || this.terminating) {
+        if (!validType || terminating) {
             window.chrome.tabs.remove(tabId);
             return { cancel: true };
         }
@@ -370,6 +353,35 @@ export default class Generator {
     }
 
     /**
+     * @ignore
+     * @description Listen to incoming webrequest headers
+     * @param {Object} details - provided by chrome
+     * @see {@link https://developer.chrome.com/extensions/webRequest#event-onCompleted | OnComplete}
+     */
+    onTabLoadListener(details) {
+
+        if (!details.responseHeaders) {
+            return;
+        }
+
+        let headers = details.responseHeaders;
+
+        for (let i = 0; i < headers.length; ++i) {
+            if (headers[i].name.toLowerCase() === 'status') {
+                if (successCodes.indexOf(parseInt(headers[i].value, 0)) < 0) {
+                    GeneratorUtils.listAdd(details.url, lists.errorHeaders);
+                    this.onTabErrorHandler(details);
+                    return;
+                }
+                break;
+            }
+        }
+        GeneratorUtils.listAdd(details.url, lists.successUrls);
+        GeneratorUtils.loadContentScript(details.tabId, () => this.terminate);
+    }
+
+    /**
+     * @ignore
      * @description whenever request causes redirect, put the
      * new url in queue and terminate current request
      */
@@ -380,104 +392,11 @@ export default class Generator {
     }
 
     /**
-     * @description Listen to incoming webrequest headers
-     * @param {Object} details - provided by chrome
-     * @see {@link https://developer.chrome.com/extensions/webRequest#event-onCompleted | OnComplete}
-     */
-    onTabLoadListener(details) {
-
-        if (!details.responseHeaders) {
-            return details;
-        }
-
-        let headers = details.responseHeaders,
-            tabId = details.tabId;
-
-        for (let i = 0; i < headers.length; ++i) {
-            if (headers[i].name.toLowerCase() === 'status') {
-                if (this.successCodes.indexOf(parseInt(headers[i].value, 0)) < 0) {
-                    this.listAdd(details.url, this.lists.errorHeaders);
-                    return this.onTabErrorHandler(details);
-                }
-                break;
-            }
-        }
-
-        this.listAdd(details.url, this.lists.successUrls);
-        return window.chrome.tabs.executeScript(tabId, {
-            file: this.clientSideJs,
-            runAt: 'document_end'
-        }, () => {
-            if (window.chrome.runtime.lastError) {
-                this.terminate();
-            }
-        });
-    }
-
-    /**
+     * @ignore
      * @description if tab errors, close it and load next one
      */
     onTabErrorHandler(details) {
         window.chrome.tabs.remove(details.tabId, () => this.navigateToNext);
     }
 
-    /**
-     * @description when urls are discovered through some means, this function determines
-     * how they should be handled
-     * @param {Array<String>} urls - the urls to process
-     */
-    processDiscoveredUrls(urls) {
-        let that = this;
-
-        (urls || []).map((u) => {
-
-            // make sure all urls are encoded
-            u = encodeURI(u);
-
-            // if there is successful entry for hashbang path
-            // automatically record save result for the hashbang path
-            if (u.indexOf('#!') > 0) {
-                let page = u.substr(0, u.indexOf('#!'));
-
-                if (that.lists.successUrls.indexOf(page) > -1) {
-                    that.listAdd(u, that.lists.completedUrls);
-                    that.listAdd(u, that.lists.successUrls);
-                }
-                if (that.lists.errorHeaders.indexOf(page) > -1) {
-                    that.listAdd(u, that.lists.completedUrls);
-                    that.listAdd(u, that.lists.errorHeaders);
-                }
-            } else if (u.indexOf('#') > 0) {
-                u = u.substr(0, u.indexOf('#'));
-            }
-            return u;
-
-        }).filter(function (u) {
-
-            // filter for everything that is clearly not html or text
-            let badFileExtension = false,
-                test = u.replace(that.url, '');
-
-            if (test.indexOf('/') > -1) {
-                let parts = test.split('/'),
-                    last = parts[parts.length - 1];
-
-                if (last.length) {
-                    badFileExtension = that.excludeExtension.filter(function (f) {
-                        return (last.indexOf(f) > 0);
-                    }).length > 0;
-                }
-            }
-
-            // filter down to new urls in target domain
-            return u.indexOf(that.url) === 0 &&
-                (that.lists.completedUrls.indexOf(u) < 0) &&
-                (that.lists.processQueue.indexOf(u) < 0) &&
-                !badFileExtension;
-
-        }).map(function (u) {
-            // if url makes it this far add it to queue
-            that.listAdd(u, that.lists.processQueue);
-        });
-    }
 }

@@ -35,7 +35,7 @@ export default class backgroundApi {
      * @ignore
      * @description if url ends with page e.g. "index.html" we want to remove
      * this and just keep the application path
-     * @param {String} appPath - url 
+     * @param {String} appPath - url
      */
     static removePageFromUrl(appPath) {
         if (appPath.indexOf('/') > 0) {
@@ -79,6 +79,7 @@ export default class backgroundApi {
     }
 
     /**
+     * @ignore
      * @description when permission request resolves, take action based on the output
      * @param {boolean} granted
      */
@@ -91,6 +92,7 @@ export default class backgroundApi {
     }
 
     /**
+     * @ignore
      * @description When craawl session ends, clear the variable
      */
     static onCrawlComplete() {
@@ -98,6 +100,7 @@ export default class backgroundApi {
     }
 
     /**
+     * @ignore
      * @description Start new generator instance
      * @param {Object} config - generator configuration
      */
