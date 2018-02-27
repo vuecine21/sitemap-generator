@@ -4,15 +4,17 @@
 
 -   [Background](#background)
     -   [backgroundApi](#backgroundapi)
-        -   [backgroundApi](#backgroundapi-1)
-        -   [newSession](#newsession)
+        -   [openSetupPage](#opensetuppage)
+        -   [launchRequest](#launchrequest)
+        -   [handleGrantResponse](#handlegrantresponse)
         -   [onCrawlComplete](#oncrawlcomplete)
-        -   [launchGenerator](#launchgenerator)
+        -   [onStartGenerator](#onstartgenerator)
     -   [backgroundEvents](#backgroundevents)
         -   [onInstalledEvent](#oninstalledevent)
     -   [centeredPopup](#centeredpopup)
         -   [open](#open)
     -   [Generator](#generator)
+        -   [generatorApi](#generatorapi)
         -   [start](#start)
         -   [terminate](#terminate)
         -   [status](#status)
@@ -45,25 +47,7 @@ The extension background context manages the sitemap generation process.
 
 ### backgroundApi
 
-#### backgroundApi
-
--   **See: [onMessage event](https://developer.chrome.com/apps/runtime#event-onMessage).**
--   **See: [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)**
-
-use this api to pass messages within the extension.
-
-**Parameters**
-
--   `request`  message parameters
-    -   `request.start`  starts generator
-    -   `request.terminate`  stops generator
-    -   `request.status`  gets current processing status
-    -   `request.urls`  receive list of urls from crawler
-    -   `request.noindex`  tells generator not to index some url, see
--   `sender` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** \-
--   `sendResponse` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** when sender expects a response, this value should be the callback function
-
-#### newSession
+#### openSetupPage
 
 -   **See: [onClicked](https://developer.chrome.com/extensions/browserAction#event-onClicked)**
 
@@ -74,21 +58,41 @@ Also read the url of the active tab and provide that as the default url to crawl
 
 -   `tab` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** current active tab,
 
-#### onCrawlComplete
+#### launchRequest
 
-When craawl session ends, clear the variable
+-   **See: [onMessage event](https://developer.chrome.com/apps/runtime#event-onMessage).**
+-   **See: [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)**
 
-#### launchGenerator
-
+Request to start new generator instance.
 This function gets called when user is ready to start new crawling session.
 At this point in time the extension will make sure the extension has been granted all necessary
 permissions, then start the generator.
 
 **Parameters**
 
--   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** configration details @see [sitemapGenerator](sitemapGenerator)
--   `sender` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** details on which window/tab send the
-    message, @see [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)
+-   `request`  
+-   `sender` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** \-
+
+#### handleGrantResponse
+
+when permission request resolves, take action based on the output
+
+**Parameters**
+
+-   `granted` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
+-   `config`  
+
+#### onCrawlComplete
+
+When craawl session ends, clear the variable
+
+#### onStartGenerator
+
+Start new generator instance
+
+**Parameters**
+
+-   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** generator configuration
 
 ### backgroundEvents
 
@@ -157,6 +161,23 @@ for it. The process works as follows:
         given time
     -   `config.callback` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** _(optional)_ function to call when sitemap
         generation has completed
+
+#### generatorApi
+
+-   **See: [onMessage event](https://developer.chrome.com/apps/runtime#event-onMessage).**
+-   **See: [MessageSender](https://developer.chrome.com/extensions/runtime#type-MessageSender)**
+
+use this api to pass messages within the extension.
+
+**Parameters**
+
+-   `request`  message parameters
+    -   `request.terminate`  stops generator
+    -   `request.status`  gets current processing status
+    -   `request.urls`  receive list of urls from crawler
+    -   `request.noindex`  tells generator not to index some url, see
+-   `sender` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** \-
+-   `sendResponse`  
 
 #### start
 
@@ -300,7 +321,6 @@ This module is used to communicate with the generator while crawling is ongoing.
 #### checkStatus
 
 Request information about current processing status from the background
-then update the UI to reflect current status.
 
 ## Crawler
 

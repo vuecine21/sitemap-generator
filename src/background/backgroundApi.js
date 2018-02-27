@@ -9,37 +9,8 @@ let generator = null;
 export default class backgroundApi {
 
     constructor() {
-        window.chrome.runtime.onMessage.addListener(backgroundApi.backgroundApi);
-        window.chrome.browserAction.onClicked.addListener(backgroundApi.newSession);
-    }
-
-    /**
-     * @description use this api to pass messages within the extension.
-     * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
-     * @param request - message parameters
-     * @param request.start - starts generator
-     * @param request.terminate - stops generator
-     * @param request.status - gets current processing status
-     * @param request.urls - receive list of urls from crawler
-     * @param request.noindex - tells generator not to index some url, see
-     * @param {Object }sender -
-     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
-     * @param {function} sendResponse - when sender expects a response, this value should be the callback function
-     */
-    static backgroundApi(request, sender, sendResponse) {
-        if (!generator) {
-            return request.start &&
-                backgroundApi.launchGenerator(request.start, sender);
-        } else if (request.terminate) {
-            generator.terminate();
-        } else if (request.noindex) {
-            generator.noindex(request.noindex);
-        } else if (request.urls) {
-            generator.urlMessage(request.urls, sender);
-        } else if (request.status) {
-            sendResponse(generator.status());
-        }
-        return false;
+        window.chrome.runtime.onMessage.addListener(backgroundApi.launchRequest);
+        window.chrome.browserAction.onClicked.addListener(backgroundApi.openSetupPage);
     }
 
     /**
@@ -48,16 +19,16 @@ export default class backgroundApi {
      * @param {Object} tab - current active tab,
      * @see {@link https://developer.chrome.com/extensions/browserAction#event-onClicked|onClicked}
      */
-    static newSession(tab) {
-        let appPath = tab.url,
-            setupPage = window.chrome.extension.getURL('setup.html');
-
+    static openSetupPage(tab) {
         if (generator) {
-            return;
+            return false;
         }
 
-        if (tab.url.indexOf('/') > 0) {
-            let parts = tab.url.split('/'),
+        let appPath = tab.url.indexOf('http') === 0 ? tab.url : '',
+            setupPage = window.chrome.extension.getURL('setup.html');
+
+        if (appPath.indexOf('/') > 0) {
+            let parts = appPath.split('/'),
                 last = parts[parts.length - 1];
 
             if (!last.length || last.indexOf('.') > 0 ||
@@ -67,7 +38,46 @@ export default class backgroundApi {
             appPath = parts.join('/');
         }
 
-        CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
+        return CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
+    }
+
+    /**
+     * @description Request to start new generator instance.
+     * This function gets called when user is ready to start new crawling session.
+     * At this point in time the extension will make sure the extension has been granted all necessary
+     * permissions, then start the generator.
+     * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
+     * @param request.start - configuration options
+     * @param {Object} sender -
+     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     */
+    static launchRequest(request, sender) {
+        if (generator || !request.start) {
+            return false;
+        }
+
+        let config = request.start;
+
+        window.chrome.tabs.remove(sender.tab.id, () => {
+            window.chrome.permissions.request({
+                permissions: ['tabs'],
+                origins: [config.requestDomain]
+            }, (granted) => backgroundApi.handleGrantResponse(granted, config));
+        });
+
+        return true;
+    }
+
+    /**
+     * @description when permission request resolves, take action based on the output
+     * @param {boolean} granted
+     */
+    static handleGrantResponse(granted, config) {
+        if (granted) {
+            return backgroundApi.onStartGenerator(config);
+        }
+        window.alert(window.chrome.i18n.getMessage('permissionNotGranted'));
+        return false;
     }
 
     /**
@@ -78,32 +88,16 @@ export default class backgroundApi {
     }
 
     /**
-     * @description This function gets called when user is ready to start new crawling session.
-     * At this point in time the extension will make sure the extension has been granted all necessary
-     * permissions, then start the generator.
-     * @param {Object} config - configration details @see {@link sitemapGenerator}
-     * @param {Object} sender - details on which window/tab send the
-     * message, @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     * @description Start new generator instance
+     * @param {Object} config - generator configuration
      */
-    static launchGenerator(config, sender) {
-        if (generator) {
-            return;
+    static onStartGenerator(config) {
+        if (!generator) {
+            config.callback = backgroundApi.onCrawlComplete;
+            generator = new Generator(config);
+            generator.start();
+            return generator;
         }
-
-        window.chrome.tabs.remove(sender.tab.id, function () {
-            window.chrome.permissions.request({
-                permissions: ['tabs'],
-                origins: [config.requestDomain]
-            }, function (granted) {
-                if (granted) {
-                    config.callback = backgroundApi.onCrawlComplete;
-                    generator = new Generator(config);
-                    generator.start();
-                } else {
-                    alert(window.chrome.i18n.getMessage('permissionNotGranted'));
-                }
-            });
-        });
+        return false;
     }
-
 }

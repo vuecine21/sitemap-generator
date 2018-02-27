@@ -57,22 +57,45 @@ export default class Generator {
     }
 
     /**
+     * @description use this api to pass messages within the extension.
+     * @see {@link https://developer.chrome.com/apps/runtime#event-onMessage|onMessage event}.
+     * @param request - message parameters
+     * @param request.terminate - stops generator
+     * @param request.status - gets current processing status
+     * @param request.urls - receive list of urls from crawler
+     * @param request.noindex - tells generator not to index some url, see
+     * @param {Object }sender -
+     * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
+     */
+    generatorApi(request, sender, sendResponse) {
+        if (request.terminate) {
+            this.terminate();
+        } else if (request.noindex) {
+            this.noindex(request.noindex);
+        } else if (request.urls) {
+            this.urlMessage(request.urls, sender);
+        } else if (request.status) {
+            sendResponse(this.status());
+        }
+        return false;
+    }
+    /**
      * @description Initiates crawling of some website
      */
     start() {
-        let launchPage = window.chrome.extension.getURL('processing.html');
+        let launchPage = window.chrome.extension.getURL('process.html');
 
         CenteredPopup.open(800, 800, launchPage, 'normal', true)
             .then((window) => {
-                this.targetRenderer = window.id;
-                // 1. register webRequest listener where we listen to successful http request events;
-                this.addListeners();
-                // 2. add the first url to processing queue
-                this.listAdd(this.url, this.lists.processQueue);
-                // 3. navigate to first url
-                this.navigateToNext();
-                // 4. start interval that progressively works through the queue
-                this.progressInterval = setInterval(this.navigateToNext, 500);
+                // this.targetRenderer = window.id;
+                // // 1. register webRequest listener where we listen to successful http request events;
+                // this.addListeners();
+                // // 2. add the first url to processing queue
+                // this.listAdd(this.url, this.lists.processQueue);
+                // // 3. navigate to first url
+                // this.navigateToNext();
+                // // 4. start interval that progressively works through the queue
+                // this.progressInterval = setInterval(this.navigateToNext, 500);
             });
     }
     /**
@@ -194,11 +217,12 @@ export default class Generator {
 
         this.terminating = true;
         clearInterval(this.progressInterval);
+        let that = this;
 
         (function closeRenderer() {
             window.chrome.tabs.query({
-                windowId: this.targetRenderer,
-                url: this.requestDomain
+                windowId: that.targetRenderer,
+                url: that.requestDomain
             }, function (result) {
                 if (result.length > 0) {
                     for (let i = 0; i < result.length; i++) {
@@ -208,12 +232,12 @@ export default class Generator {
                     return;
                 }
                 setTimeout(function () {
-                    this.removeListeners();
-                    if (this.onCompleteCallback) {
-                        this.onCompleteCallback();
+                    that.removeListeners();
+                    if (that.onCompleteCallback) {
+                        that.onCompleteCallback();
                     }
                     window.chrome.windows.remove(
-                        this.targetRenderer, this.makeSitemap);
+                        that.targetRenderer, that.makeSitemap);
                 }, 1000);
             });
         }());
@@ -239,6 +263,7 @@ export default class Generator {
      * - onErrorOccurred when there is a problem with tab and we can close
      */
     addListeners() {
+        window.chrome.runtime.onMessage.addListener(this.generatorApi);
         window.chrome.webRequest.onHeadersReceived.addListener(this.onHeadersReceivedHandler,
             { urls: [this.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
         window.chrome.webRequest.onBeforeRedirect.addListener(this.onBeforeRedirect,
@@ -253,6 +278,7 @@ export default class Generator {
      * @description when processing is done remove all event listeners
      */
     removeListeners() {
+        window.chrome.runtime.onMessage.removeListener(this.generatorApi);
         window.chrome.webRequest.onHeadersReceived.removeListener(this.onHeadersReceivedHandler,
             { urls: [this.requestDomain], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
         window.chrome.webRequest.onBeforeRedirect.removeListener(this.onBeforeRedirect,

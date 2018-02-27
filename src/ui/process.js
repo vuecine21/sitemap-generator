@@ -8,7 +8,7 @@ export default class Process {
 
         // bind event handlers
         document.getElementById('close').onclick = (e) => {
-            window.chrome.runtime.sendMessage({terminate: true});
+            window.chrome.runtime.sendMessage({ terminate: true });
             e.target.innerText = 'Terminating....';
         };
 
@@ -18,25 +18,26 @@ export default class Process {
         }
 
         // after first 10x increase the interval
-        setTimeout(function () {
-            setInterval(Process.checkStatus, 10000);
-        }, 10 * 1000);
+        setInterval(Process.checkStatus, 10000);
     }
 
     /**
      * @description Request information about current processing status from the background
-     * then update the UI to reflect current status.
      */
     static checkStatus() {
-        window.chrome.runtime.sendMessage({status: true}, function (response) {
-            for (let k in response) {
-                if (response.hasOwnProperty(k)) {
-                    let elem = document.getElementById(k);
+        window.chrome.runtime.sendMessage({ status: true }, Process.handleStatusResponse);
+    }
 
-                    if (elem) elem.innerText = response[k];
-                }
-            }
-        });
+    /**
+     * @ignore
+     * @description When status response is received, update the UI to reflect the information
+     */
+    static handleStatusResponse(response) {
+        for (let k in response) {
+            let elem = document.getElementById(k);
+
+            if (elem) elem.innerText = response[k];
+        }
     }
 }
 

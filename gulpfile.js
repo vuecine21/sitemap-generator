@@ -131,11 +131,11 @@ gulp.task('build-html', function () {
 
 gulp.task('build-js', function () {
  
-    gulp.src(paths.processing)
+    gulp.src(paths.process)
         .pipe(webpack(require(paths.webpack)))
         .pipe($.rename(function (path) {
             path.dirname = "";
-            path.basename = "setup"
+            path.basename = "process"
         })).pipe(gulp.dest(paths.dist));
         
     gulp.src(paths.setup)
