@@ -70,23 +70,20 @@ export default class Setup {
         let siteUrlInput = document.getElementsByName('url')[0],
             siteUrlInputError = document.getElementById('url-error'),
             url = (siteUrlInput.value || '').trim(),
-            invalidReason = false;
-
-        siteUrlInputError.innerText = '';
-        siteUrlInput.classList.remove('is-invalid');
+            message = '';
 
         if (!url || url.trim().length < 1) {
-            invalidReason = 'Url value is required';
+            message = 'Url value is required';
         } else if (url.indexOf('http://') !== 0 && url.indexOf('https://') !== 0) {
-            invalidReason = 'Url must start with http:// or https://';
+            message = 'Url must start with http:// or https://';
         }
+        let error = message.length,
+            classAction = error ? 'remove' : 'add';
 
-        if (invalidReason) {
-            siteUrlInputError.innerText = invalidReason;
-            siteUrlInput.className += ' is-invalid';
-        }
+        siteUrlInputError.innerText = message;
+        siteUrlInput.classList[classAction]('is-invalid');
 
-        return {url: url, error: !!invalidReason};
+        return {url: url, error: error};
     }
 }
 
