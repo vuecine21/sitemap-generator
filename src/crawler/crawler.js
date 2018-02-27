@@ -1,5 +1,4 @@
-
-let hasFired = false;
+let hasFired;
 
 /**
  * @namespace
@@ -7,6 +6,8 @@ let hasFired = false;
 export default class Crawler {
 
     constructor() {
+
+        hasFired = false;
 
         // try prevent window.close() because it will terminate everything
         // Then again if you do this on your website, you should get dinged
@@ -17,12 +18,12 @@ export default class Crawler {
 
         // remove this url from sitemap if noindex is set
         if (robots.indexOf('noindex') >= 0) {
-            window.chrome.runtime.sendMessage({ noindex: window.location.href });
+            window.chrome.runtime.sendMessage({noindex: window.location.href});
         }
 
         // don't follow links on this page if no follow is set
         if (robots.indexOf('nofollow') >= 0) {
-            return window.chrome.runtime.sendMessage({ urls: [] });
+            return window.chrome.runtime.sendMessage({urls: []});
         }
 
         // wait for onload
@@ -37,14 +38,11 @@ export default class Crawler {
      * @param {String} jsCodeFragment - the code you want to execute in the document context
      */
     static appendCodeFragment(jsCodeFragment) {
-        (function _appendToDom(domElem, elem, type, content, src, href, rel) {
+        (function _appendToDom(domElem, elem, type, content) {
             let e = document.createElement(elem);
 
             e.type = type;
-            if (content) e.textContent = content;
-            if (src) e.src = src;
-            if (href) e.href = href;
-            if (rel) e.rel = rel;
+            e.textContent = content;
             document.getElementsByTagName(domElem)[0].append(e);
         }('body', 'script', 'text/javascript', jsCodeFragment));
     }
@@ -76,23 +74,25 @@ export default class Crawler {
 
         let result = {}, links = document.querySelectorAll('a[href]');
 
-        for (let n = 0; n < links.length; n++) {
-            let href = links[n].getAttribute('href');
+        if (links.length) {
+            for (let n = 0; n < links.length; n++) {
+                let href = links[n].getAttribute('href');
 
-            if (href.indexOf('http') < 0) {
-                href = (function absolutePath(href) {
-                    let link = document.createElement('a');
+                if (href.indexOf('http') < 0) {
+                    href = (function absolutePath(href) {
+                        let link = document.createElement('a');
 
-                    link.href = href;
-                    return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
-                }());
+                        link.href = href;
+                        return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
+                    }());
+                }
+                result[href] = 1;
             }
-            result[href] = 1;
         }
 
         let uniqueUrls = Object.keys(result);
 
-        window.chrome.runtime.sendMessage({ urls: uniqueUrls });
+        window.chrome.runtime.sendMessage({urls: uniqueUrls});
     }
 }
 

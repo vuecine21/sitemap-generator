@@ -14,7 +14,6 @@ describe('Process Page', () => {
         global.setTimeout = () => {};
         global.setInterval = () => {};
         Process = require('../src/ui/process.js');
-        chrome.flush();
     });
     beforeEach(function () {
         chrome.flush();
