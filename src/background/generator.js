@@ -1,6 +1,7 @@
 import CenteredPopup from './centeredPopup.js';
 
 /**
+ * @namespace
  * @description This module crawls some website and generates a sitemap
  * for it. The process works as follows:
  *
@@ -17,7 +18,6 @@ import CenteredPopup from './centeredPopup.js';
  * 5. After everything has been cheked the generator will close the window and provide
  * the results to the end user
  *
- * @namespace
  * @param {Object} config - configuration options
  * @param {string} config.url - the website/app path we want to crawl
  * -- all sitemap entries will be such that they include this base url

@@ -11,7 +11,7 @@ export default class Setup {
             startButton = document.getElementById('start');
 
         // the initial url will be active tab url if available
-        siteUrlInput.value = (siteUrl.indexOf('http') === 0) ? siteUrl : '';
+        siteUrlInput.value = ((siteUrl || '').indexOf('http') === 0) ? siteUrl : '';
         startButton.onclick = Setup.onStartButtonClick;
     }
 
@@ -31,6 +31,7 @@ export default class Setup {
     }
 
     /**
+     * @ignore
      * @description Handle start button click -> this will check user inputs
      * and if successful, send message to background page to initiate crawling.
      * @param {Object} e - click event
@@ -55,12 +56,13 @@ export default class Setup {
                 maxTabCount: 25
             };
 
-        window.chrome.runtime.sendMessage({ start: config });
+        window.chrome.runtime.sendMessage({start: config});
         e.target.innerText = 'Starting....';
         document.getElementById('start').onclick = false;
     }
 
     /**
+     * @ignore
      * @description Make sure url input is correct
      * @returns {Object} - validation response
      */
@@ -84,7 +86,7 @@ export default class Setup {
             siteUrlInput.className += ' is-invalid';
         }
 
-        return { url: url, error: !!invalidReason };
+        return {url: url, error: !!invalidReason};
     }
 }
 

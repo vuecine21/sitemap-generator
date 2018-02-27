@@ -40,6 +40,7 @@ export default class backgroundApi {
         }
         return false;
     }
+
     /**
      * @description When user clicks extension icon, launch the session configuration page.
      * Also read the url of the active tab and provide that as the default url to crawl on the setup page.
@@ -67,12 +68,14 @@ export default class backgroundApi {
 
         CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
     }
+
     /**
      * @description When craawl session ends, clear the variable
      */
     static onCrawlComplete() {
         generator = null;
     }
+
     /**
      * @description This function gets called when user is ready to start new crawling session.
      * At this point in time the extension will make sure the extension has been granted all necessary
@@ -101,4 +104,5 @@ export default class backgroundApi {
             });
         });
     }
+
 }

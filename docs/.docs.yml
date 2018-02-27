@@ -3,22 +3,14 @@ toc:
   description: |
     The extension background context manages the sitemap generation process.
   children:
+    - backgroundApi
     - backgroundEvents
-    - sitemapGenerator
-    - centeredWindow
-
-- name: Client-Side Crawler 
-  children:
-    - crawler
-
+    - centeredPopup
+    - Generator
 - name: User Interface
   description: |
     The UI pages are extension pages allowing user to control the sitemap generation process and interaction with the sitemap generator.
-    
-    There are currectly two views: 
-    - `Setup` - page where user can configure their preferences
-    - `Processing` - page shows while sitemap generation is in progress
 
   children:
-    - setup
-    - processing
+    - Setup
+    - Process

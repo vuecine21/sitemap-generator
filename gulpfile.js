@@ -148,14 +148,14 @@ gulp.task('build-js', function () {
     gulp.src(paths.background)
         .pipe(webpack(require(paths.webpack)))
         .pipe($.rename(function (path) {
-            path.dirname = "js";
+            path.dirname = "";
             path.basename = "background"
         })).pipe(gulp.dest(paths.dist));
 
     return gulp.src(paths.content)
         .pipe(webpack(require(paths.webpack)))
         .pipe($.rename(function (path) {
-            path.dirname = "js";
+            path.dirname = "";
             path.basename = "content"
         })).pipe(gulp.dest(paths.dist));
 })

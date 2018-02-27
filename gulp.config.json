@@ -13,6 +13,7 @@
     "./assets/img/icons/**/*.png",
     "./assets/img/icons/**/*.svg"
   ],
+  "docs_toc":"./docs/.docs.yml",
   "locales": "./assets/locales/",
   "locales_list": [
     "en",
