@@ -9,7 +9,7 @@ chai.expect();
 require('jsdom-global')();
 const expect = chai.expect;
 
-let url = "https://www.test.com/",
+let generator, url = "https://www.test.com/",
     requestDomain = url + "/*",
     testPages = {
         a: "https://www.test.com/index.html",
@@ -87,12 +87,34 @@ describe('Event pages', () => {
     describe('Generator', () => {
         beforeEach(() => {
             window.chrome.flush();
+            generator = new Generator(defaultConfig);
+            generator.start();
+        }); 
+        it('should start and stop without error', () => {
+            expect(() => { generator.start() }).to.not.throw();
+            expect(() => { generator.onComplete() }).to.not.throw();
         });
-        // it('should initialize without error', () => {
-        //     expect(() => { new Generator(defaultConfig) }).to.not.throw();
-        // });
+        it('should report status without error', () => {
+            expect(() => { generator.status() }).to.not.throw();
+        });
+        it('should handle noindex without error', () => {
+            expect(() => { generator.noindex(url) }).to.not.throw();
+        });
+        it('should receive urls without error', () => {
+            expect(() => { generator.urlMessage([testPages.a, testPages.d], defaultSender) }).to.not.throw();
+        });
+        it('api should return false if no method matches', () => {
+            expect(generator.generatorApi({ badRequest: true })).to.be.false;
+        });
+        it('api crawlurl should return base url', (done) => {
+            generator.generatorApi({ crawlUrl: true }, defaultSender, (resp)=>{
+                expect(resp).to.equal(defaultConfig.url);
+                done();
+            })
+        });
         afterEach(() => {
             backgroundApi.onCrawlComplete();
+            generator.onComplete();
         });
     });
 });

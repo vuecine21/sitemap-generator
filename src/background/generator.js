@@ -95,7 +95,7 @@ export default class Generator {
             this.urlMessage(request.urls, sender);
         } else if (request.status) {
             return sendResponse(this.status());
-        } else if (request.url) {
+        } else if (request.crawlUrl) {
             return sendResponse(url);
         }
         return false;
@@ -212,7 +212,6 @@ export default class Generator {
         let oncComplete = this.onComplete,
             next = this.navigateToNext;
 
-        console.log('queue len:', lists.processQueue.length);
         window.chrome.tabs.query({
             windowId: targetRenderer,
             url: requestDomain
@@ -261,8 +260,6 @@ export default class Generator {
      * @param {Array<String>} urls - the urls to process
      */
     processDiscoveredUrls(urls) {
-        console.log('urls', urls);
-
         (urls || []).map((u) => {
 
             // make sure all urls are encoded
@@ -302,7 +299,6 @@ export default class Generator {
                     }).length > 0;
                 }
             }
-            console.log(u.indexOf(url) === 0, u);
             // filter down to new urls in target domain
             return u.indexOf(url) === 0 &&
                 (lists.completedUrls.indexOf(u) < 0) &&
@@ -324,7 +320,6 @@ export default class Generator {
 
         let action = add ? 'addListener' : 'removeListener';
 
-        console.log('modifying listeners:', action);
         window.chrome.runtime.onMessage[action](this.generatorApi);
 
         window.chrome.webRequest.onHeadersReceived[action](this.onHeadersReceivedHandler,
@@ -419,7 +414,11 @@ export default class Generator {
      * @description if tab errors, close it and load next one
      */
     onTabErrorHandler(details) {
-        window.chrome.tabs.remove(details.tabId, () => this.navigateToNext);
+        window.chrome.tabs.remove(details.tabId, () => {
+            if (window.chrome.runtime.lastError);
+
+            this.navigateToNext();
+        });
     }
 
 }

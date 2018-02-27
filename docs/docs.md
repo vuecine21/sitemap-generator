@@ -27,6 +27,7 @@
         -   [checkStatus](#checkstatus)
 -   [Crawler](#crawler)
     -   [getRobotsMeta](#getrobotsmeta)
+    -   [getBaseUrl](#getbaseurl)
     -   [findLinks](#findlinks)
 
 ## Background
@@ -233,6 +234,15 @@ Request information about current processing status from the background
 ### getRobotsMeta
 
 Look for 'robots' meta tag in the page header and if found return its contents
+
+### getBaseUrl
+
+request the app path that is being crawled
+so we can narrow down the matches in the front end
+
+**Parameters**
+
+-   `callback`  
 
 ### findLinks
 
