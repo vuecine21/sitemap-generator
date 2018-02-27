@@ -2,10 +2,10 @@
   "dist": "./dist",
   "source": "./src",
   "releases": "./releases",
-  "publish": "./releases",
-  "readme": "readme.md",
-  "manifest": "./manifest.json",
+  "manifest": "./src/manifest.json",
   "package": "./package.json",
+  "webpack": "./webpack.config.js",
+  "readme": "./docs/readme.md",
   "js": "./src/**/*.js",
   "html": "./src/**/*.html",
   "scss": "./src/**/*.scss",
@@ -13,21 +13,15 @@
     "./assets/img/icons/**/*.png",
     "./assets/img/icons/**/*.svg"
   ],
+  "docs_toc":"./docs/.docs.yml",
   "locales": "./assets/locales/",
   "locales_list": [
     "en",
     "en_US",
     "en_GB"
   ],
-  "background": [
-    "./src/background/_*.js",
-    "./src/background/generator.js",
-    "./src/background/*.js"
-  ],
-  "content": [
-    "./src/crawler/*.js"
-  ],
-  "modules": [
-    "./src/ui/**/*.js"
-  ]
+  "background": "./src/background/**/*.js",
+  "content": "./src/crawler/**/*.js",
+  "setup": "./src/ui/setup.js",
+  "processing": "./src/ui/processing.js"
 }

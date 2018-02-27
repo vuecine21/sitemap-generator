@@ -1,13 +1,12 @@
 
-<img src="assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;" />
+<img src="https://raw.githubusercontent.com/sneeakco/sitemap-generator/master/assets/img/promo/screenshot_2.png" alt="Sitemap Generator" style="display:table; margin:10px auto;" />
  
-![alt text](https://img.shields.io/badge/latest-v0.0.4-55acee.svg "version")
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/sneeakco/sitemap-generator.svg?branch=master)](https://travis-ci.org/sneeakco/sitemap-generator)
+![alt text](https://img.shields.io/badge/latest-v0.0.4-55acee.svg "version") 
+[![Build Status](https://travis-ci.org/sneeakco/sitemap-generator.svg?branch=master)](https://travis-ci.org/sneeakco/sitemap-generator) 
 [![Docs](http://inch-ci.org/github/sneeakco/sitemap-generator.svg?branch=master)](https://inch-ci.org/github/sneeakco/sitemap-generator)
-[![dependencies Status](https://david-dm.org/sneeakco/sitemap-generator/status.svg)](https://david-dm.org/sneeakco/sitemap-generator)
+[![Coverage Status](https://coveralls.io/repos/github/sneeakco/sitemap-generator/badge.svg)](https://coveralls.io/github/sneeakco/sitemap-generator)
+[![Maintainability](https://api.codeclimate.com/v1/badges/b2a166051a56c875499c/maintainability)](https://codeclimate.com/github/sneeakco/sitemap-generator/maintainability)[![dependencies Status](https://david-dm.org/sneeakco/sitemap-generator/status.svg)](https://david-dm.org/sneeakco/sitemap-generator)
 [![devDependencies Status](https://david-dm.org/sneeakco/sitemap-generator/dev-status.svg)](https://david-dm.org/sneeakco/sitemap-generator?type=dev)
-
 
 **Generate sitemaps using Chrome browser. Especially intended for generating sitemaps for dynamic single-page applications (SPAs).**
 
@@ -33,6 +32,7 @@ I make a lot of web apps using react and angular. I know there are dev tools tha
 
 - Allows rendering javascript
 - Avoids most server-side bottlenecks
+- Usable with any web tech stack
 - Can override CORS policies
 - No application specific setup
 - Accommodates website changes

@@ -1,102 +1,105 @@
+let hasFired;
+
 /**
- * @description The crawler is responsible for finding urls in in the requested documents.
- * 
- * The generator will load the Crawler module in tabs. The crawler module will then look for urls in the particular tab and send its findings to background in a message. After that the background generator will close the tab.
  * @namespace
  */
-(function crawler() {
+export default class Crawler {
 
-    var hasFired = false;
+    constructor() {
 
-    /**
-     * @function
-     * @memberof crawler
-     * @description Append some js code fragment in current document DOM
-     * @param {String} jsCodeFragment - the code you want to execute in the document context
-     */
-    function appendCodeFragment(jsCodeFragment) {
-        /** @ignore */
-        function _appendToDom(domElem, elem, type, content, src, href, rel) {
-            var e = document.createElement(elem);
-            e.type = type;
-            if (content) e.textContent = content;
-            if (src) e.src = src;
-            if (href) e.href = href;
-            if (rel) e.rel = rel;
-            document.getElementsByTagName(domElem)[0].append(e);
+        hasFired = false;
+
+        // try prevent window.close() because it will terminate everything
+        // Then again if you do this on your website, you should get dinged
+        Crawler.appendCodeFragment('window.onbeforeunload = null');
+
+        // get robots meta
+        let robots = Crawler.getRobotsMeta();
+
+        // remove this url from sitemap if noindex is set
+        if (robots.indexOf('noindex') >= 0) {
+            window.chrome.runtime.sendMessage({noindex: window.location.href});
         }
-        _appendToDom("body", "script", "text/javascript", jsCodeFragment);
+
+        // don't follow links on this page if no follow is set
+        if (robots.indexOf('nofollow') >= 0) {
+            return window.chrome.runtime.sendMessage({urls: []});
+        }
+
+        // wait for onload
+        window.onload = Crawler.findLinks;
+
+        // but ensure the function will ultimately run
+        setTimeout(Crawler.findLinks, 500);
     }
 
     /**
-     * @function
-     * @memberof crawler
-     * @description Look for "robots" meta tag in the page header and if found return its contents
+     * @ignore
+     * @description Append some js code fragment in current document DOM
+     * @param {String} jsCodeFragment - the code you want to execute in the document context
      */
-    function getRobotsMeta() {
-        var metas = document.getElementsByTagName('meta');
+    static appendCodeFragment(jsCodeFragment) {
+        (function _appendToDom(domElem, elem, type, content) {
+            let e = document.createElement(elem);
 
-        for (var i = 0; i < metas.length; i++) {
-            if ((metas[i].getAttribute("name") || '').toLowerCase() === "robots") {
-                return (metas[i].getAttribute("content") || '').toLowerCase();
+            e.type = type;
+            e.textContent = content;
+            document.getElementsByTagName(domElem)[0].append(e);
+        }('body', 'script', 'text/javascript', jsCodeFragment));
+    }
+
+    /**
+     * @description Look for 'robots' meta tag in the page header and if found return its contents
+     */
+    static getRobotsMeta() {
+        let metas = document.getElementsByTagName('meta');
+
+        for (let i = 0; i < metas.length; i++) {
+            if ((metas[i].getAttribute('name') || '').toLowerCase() === 'robots') {
+                return (metas[i].getAttribute('content') || '').toLowerCase();
             }
         }
         return '';
     }
 
     /**
-     * @function
-     * @memberof crawler
      * @description Looks for links on the page, then send a message with findings to background page
      */
-    function findLinks() {
+    static findLinks() {
 
-        if (hasFired) return;
-        hasFired = true;
+        if (!hasFired) {
 
-        var absolutePath = function (href) {
-            var link = document.createElement("a");
-            link.href = href;
-            return (link.protocol + "//" + link.host + link.pathname + link.search + link.hash);
-        };
+            hasFired = true;
 
-        var result = {};
-        var links = document.querySelectorAll("a[href]");
-        for (var n = 0; n < links.length; n++) {
-            var href = links[n].getAttribute("href");
-            if (href.indexOf("http") < 0) href = absolutePath(href);
-            result[href] = 1;
+            let result = {};
+
+            [].forEach.call(document.querySelectorAll('a[href]'), (link) => {
+                result[Crawler.getAbsoluteHref(link)] = 1;
+            });
+            window.chrome.runtime.sendMessage({urls: Object.keys(result)});
         }
-
-        var uniqueUrls = Object.keys(result);
-        chrome.runtime.sendMessage({ urls: uniqueUrls });
     }
 
-    /* ignore */
-    (function init() {
+    /*
+    * @ignore
+    * @description given an anchro tag, return its href in abs format
+    * @param anchorTag
+    */
+    static getAbsoluteHref(anchorTag) {
+        let href = anchorTag.getAttribute('href');
 
-        // try prevent window.close() because it will terminate everything
-        // Then again if you do this on your website, you should get dinged
-        appendCodeFragment("window.onbeforeunload = null");
+        if (href.indexOf('http') < 0) {
+            href = (function absolutePath(href) {
+                let link = document.createElement('a');
 
-        // get robots meta
-        var robots = getRobotsMeta();
+                link.href = href;
+                return (link.protocol + '//' + link.host + link.pathname + link.search + link.hash);
+            }());
+        }
 
-        // remove this url from sitemap if noindex is set
-        if (robots.indexOf("noindex") > -1)
-            chrome.runtime.sendMessage({ noindex: window.location.href });
+        return href;
+    }
 
-        // don't follow links on this page if no follow is set
-        if (robots.indexOf("nofollow") > -1)
-            return chrome.runtime.sendMessage({ urls: [] });
+}
 
-        // wait for onload
-        window.onload = findLinks;
-
-        // but ensure the function will ultimately run
-        setTimeout(findLinks, 500);
-
-    }());
-
-
-}());
+(() => new Crawler())();
