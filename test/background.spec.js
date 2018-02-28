@@ -61,10 +61,6 @@ describe('Event pages', () => {
             backgroundApi.onCrawlComplete();
             expect(BackgroundApi.openSetupPage({ url: testPages.a })).to.not.be.false;
         });
-        it('openSetupPage manipulates tab url without error', () => {
-            expect(() => { BackgroundApi.openSetupPage({ url: "chrome://about" }); }).to.not.throw();
-            expect(() => { BackgroundApi.openSetupPage({ url: testPages.a }); }).to.not.throw();
-        });
         it('launchRequest executes without error', () => {
             expect(BackgroundApi.launchRequest({ start: defaultConfig }, defaultSender)).to.be.true;
         });

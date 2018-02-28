@@ -1,7 +1,7 @@
 import CenteredPopup from './centeredPopup.js';
 import Generator from './generator.js';
 
-let generator = null;
+let setupWindow, generator;
 
 /**
  * @namespace
@@ -27,28 +27,10 @@ export default class backgroundApi {
         let appPath = tab.url.indexOf('http') === 0 ? tab.url : '',
             setupPage = window.chrome.extension.getURL('setup.html');
 
-        appPath = backgroundApi.removePageFromUrl(appPath);
-        return CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup');
-    }
-
-    /**
-     * @ignore
-     * @description if url ends with page e.g. "index.html" we want to remove
-     * this and just keep the application path
-     * @param {String} appPath - url
-     */
-    static removePageFromUrl(appPath) {
-        if (appPath.indexOf('/') > 0) {
-            let parts = appPath.split('/'),
-                last = parts[parts.length - 1];
-
-            if (!last.length || last.indexOf('.') > 0 ||
-                last.indexOf('#') > 0 || last.indexOf('?') > 0) {
-                parts.pop();
-            }
-            appPath = parts.join('/');
-        }
-        return appPath;
+        return CenteredPopup.open(600, 600, setupPage + '?u=' + appPath, 'popup')
+            .then((window) => {
+                setupWindow = window.id;
+            });
     }
 
     /**
@@ -61,34 +43,46 @@ export default class backgroundApi {
      * @param {Object} sender -
      * @see {@link https://developer.chrome.com/extensions/runtime#type-MessageSender|MessageSender}
      */
-    static launchRequest(request, sender) {
+    static launchRequest(request) {
         if (generator || !request.start) {
             return false;
         }
 
         let config = request.start;
 
-        window.chrome.tabs.remove(sender.tab.id, () => {
-            window.chrome.permissions.request({
-                permissions: ['tabs'],
-                origins: [config.requestDomain]
-            }, (granted) => backgroundApi.handleGrantResponse(granted, config));
-        });
-
+        window.chrome.permissions.request({
+            permissions: ['tabs'],
+            origins: [config.requestDomain]
+        }, (granted) => backgroundApi.handleGrantResponse(granted, config));
         return true;
     }
 
     /**
      * @ignore
      * @description when permission request resolves, take action based on the output
-     * @param {boolean} granted
+     * @param {boolean} granted - true if permission granted
+     * @param {Object} config - runtime settings
      */
     static handleGrantResponse(granted, config) {
+        backgroundApi.closeSetupWindow();
         if (granted) {
             return backgroundApi.onStartGenerator(config);
         }
         window.alert(window.chrome.i18n.getMessage('permissionNotGranted'));
         return false;
+    }
+
+    /**
+     * @ignore
+     * @description Try close the setup window
+     */
+    static closeSetupWindow() {
+        if (setupWindow) {
+            window.chrome.windows.remove(setupWindow, () => {
+                if (window.chrome.runtime.lastError) ;
+                setupWindow = null;
+            });
+        }
     }
 
     /**

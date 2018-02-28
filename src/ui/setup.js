@@ -11,6 +11,7 @@ export default class Setup {
             startButton = document.getElementById('start');
 
         // the initial url will be active tab url if available
+        siteUrl = Setup.removePageFromUrl(siteUrl);
         siteUrlInput.value = siteUrl;
         startButton.onclick = Setup.onStartButtonClick;
     }
@@ -56,9 +57,29 @@ export default class Setup {
                 maxTabCount: 25
             };
 
-        window.chrome.runtime.sendMessage({ start: config });
+        window.chrome.runtime.sendMessage({start: config});
         e.target.innerText = 'Starting....';
         document.getElementById('start').onclick = false;
+    }
+
+    /**
+     * @ignore
+     * @description if url ends with page e.g. "index.html" we want to remove
+     * this and just keep the application path
+     * @param {String} appPath - url
+     */
+    static removePageFromUrl(appPath) {
+        if (appPath.indexOf('/') > 8) {
+            let parts = appPath.split('/'),
+                last = parts[parts.length - 1];
+
+            if (!last.length || last.indexOf('.') > 0 ||
+                last.indexOf('#') > 0 || last.indexOf('?') > 0) {
+                parts.pop();
+            }
+            appPath = parts.join('/');
+        }
+        return appPath;
     }
 
     /**
@@ -69,7 +90,7 @@ export default class Setup {
     static validateUrl() {
         let siteUrlInput = document.getElementsByName('url')[0],
             siteUrlInputError = document.getElementById('url-error'),
-            url = (siteUrlInput.value || '').trim(),
+            url = Setup.removePageFromUrl((siteUrlInput.value || '')).trim(),
             message = '';
 
         if (url.length < 1) {
@@ -79,7 +100,7 @@ export default class Setup {
         }
         let error = message.length,
             className = 'is-invalid',
-            result = { url: url, error: error };
+            result = {url: url, error: error};
 
         siteUrlInputError.innerText = message;
         if (error) {

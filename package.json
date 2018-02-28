@@ -1,6 +1,6 @@
 {
   "name": "name",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "license": "MIT",
   "author": "Professor Chaos",
   "description": "use chrome browser to generate sitemaps for your websites. This extension crawls website like end user and checks and paths actually work.",
@@ -10,7 +10,7 @@
     "build:patch": "gulp --env build --patch && npm run test",
     "build:minor": "gulp --env build --minor && npm run test",
     "build:major": "gulp --env build --major && npm run test",
-    "release": "gulp -- release && cd ../../Github && node release sitemap-generator",
+    "release": "gulp -- release && cd ../../Github && node release sitemap",
     "dev": "gulp --progress --watch --colors --env dev",
     "test": "mocha --require babel-core/register --colors ./test/*.spec.js",
     "test:watch": "mocha --require babel-core/register --colors -w ./test/*.spec.js",
@@ -61,4 +61,3 @@
     "yargs": "^11.0.0"
   }
 }
-
