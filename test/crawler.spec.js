@@ -27,38 +27,28 @@ describe('Page Crawler', () => {
     });
     it('initializes when nofollow exists', () => {
         document.documentElement.innerHTML = "<html><head><meta name='robots' content='nofollow' /></head><body></body>";
-        expect(() => {
-            new Crawler()
-        }).to.not.throw();
+        expect(() => {new Crawler()}).to.not.throw();
+        expect(Crawler.getRobotsMeta()).to.equal('nofollow');
     });
     it('initializes when noindex exists', () => {
         document.documentElement.innerHTML = "<html><head><meta name='robots' content='noindex' /></head><body></body>";
-        expect(() => {
-            new Crawler()
-        }).to.not.throw();
-    });
-    it('can append code fragments to DOM', () => {
-        expect(() => {
-            Crawler.appendCodeFragment("console.log('hey')")
-        }).to.not.throw();
+        expect(() => {new Crawler()}).to.not.throw();
+        expect(Crawler.getRobotsMeta()).to.equal('noindex');
     });
     it('getRobotsMeta does not crash when name prop does not exist', () => {
         document.documentElement.innerHTML = "<html><head><meta content='test' /></head><body></body>";
-        expect(() => {
-            Crawler.getRobotsMeta()
-        }).to.not.throw();
+        expect(() => {Crawler.getRobotsMeta()}).to.not.throw();
     });
     it('getRobotsMeta does not crash when content prop does not exist', () => {
         document.documentElement.innerHTML = "<html><head><meta name='robots' /></head><body></body>";
         expect(() => {Crawler.getRobotsMeta()}).to.not.throw();
     });
-    // it('findLinks sends message to background when links exist', () => {
-    //     document.documentElement.innerHTML = "<html><head></head><body>" +
-    //         "<a href='home.html'>Link 1</a><a href='https://www.google.com'>Link 2</a></body>";
-    //     expect(window.chrome.runtime.sendMessage.notCalled).to.be.true;
-    //     new Crawler() & Crawler.findLinks();
-    //     expect(window.chrome.runtime.sendMessage.notCalled).to.be.false;
-    // });
+    it('findLinks sends message to background when links exist', () => {
+        document.documentElement.innerHTML = "<html><head></head><body>" +
+            "<a href='home.html'>Link 1</a><a href='https://www.google.com'>Link 2</a></body>";
+        new Crawler() & Crawler.findLinks();
+        expect(window.chrome.runtime.sendMessage.notCalled).to.be.false;
+    });
     // it('findLinks sends message to background when links do not exist', () => {
     //     document.documentElement.innerHTML = "<html><head></head><body></body>";
     //     expect(window.chrome.runtime.sendMessage.notCalled).to.be.true;

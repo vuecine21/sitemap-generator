@@ -1,4 +1,4 @@
-let hasFired, baseUrl;
+let hasFired, baseUrl = '';
 
 /**
  * @namespace
@@ -21,12 +21,12 @@ export default class Crawler {
 
         // remove this url from sitemap if noindex is set
         if (robots.indexOf('noindex') >= 0) {
-            window.chrome.runtime.sendMessage({ noindex: window.location.href });
+            window.chrome.runtime.sendMessage({noindex: window.location.href});
         }
 
         // don't follow links on this page if no follow is set
         if (robots.indexOf('nofollow') >= 0) {
-            return window.chrome.runtime.sendMessage({ urls: [] });
+            return window.chrome.runtime.sendMessage({urls: []});
         }
 
         // wait for onload
@@ -70,7 +70,7 @@ export default class Crawler {
      * so we can narrow down the matches in the front end
      */
     static getBaseUrl(callback) {
-        window.chrome.runtime.sendMessage({ crawlUrl: true }, function (url) {
+        window.chrome.runtime.sendMessage({crawlUrl: true}, function (url) {
             baseUrl = encodeURI(url);
             if (callback) {
                 callback();
@@ -96,7 +96,7 @@ export default class Crawler {
                 }
             });
 
-            window.chrome.runtime.sendMessage({ urls: message });
+            window.chrome.runtime.sendMessage({urls: message});
         }
     }
 

@@ -69,12 +69,12 @@ export default class Setup {
      * @param {String} appPath - url
      */
     static removePageFromUrl(appPath) {
-        if (appPath.indexOf('/') > 8) {
+        if (appPath && appPath.lastIndexOf('/') > 8) {
             let parts = appPath.split('/'),
                 last = parts[parts.length - 1];
 
             if (!last.length || last.indexOf('.') > 0 ||
-                last.indexOf('#') > 0 || last.indexOf('?') > 0) {
+                last.indexOf('#') >= 0 || last.indexOf('?') >= 0) {
                 parts.pop();
             }
             appPath = parts.join('/');
